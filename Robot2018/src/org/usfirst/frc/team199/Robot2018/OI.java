@@ -43,24 +43,31 @@ public class OI {
 		return (int) SmartDashboard.getNumber("Button/" + key, def);
 	}
 
-	public OI() {
+	/**
+	 * Instantiates all of the joysticks and joystick buttons. Ties buttons to their
+	 * respective commands.
+	 * 
+	 * @param robot
+	 *            the actual Robot object, for non-static purposes
+	 */
+	public OI(Robot robot) {
 		leftJoy = new Joystick(0);
 		shiftLowGearButton = new JoystickButton(leftJoy, getButton("Shift Low Gear", 3));
-		shiftLowGearButton.whenPressed(new ShiftLowGear());
+		shiftLowGearButton.whenPressed(new ShiftLowGear(robot));
 		shiftHighGearButton = new JoystickButton(leftJoy, getButton("Shift High Gear", 5));
-		shiftHighGearButton.whenPressed(new ShiftHighGear());
+		shiftHighGearButton.whenPressed(new ShiftHighGear(robot));
 		shiftDriveTypeButton = new JoystickButton(leftJoy, getButton("Shift Drive Type", 2));
-		shiftDriveTypeButton.whenPressed(new ShiftDriveType());
+		shiftDriveTypeButton.whenPressed(new ShiftDriveType(robot));
 		PIDMoveButton = new JoystickButton(leftJoy, getButton("PID Move", 7));
-		PIDMoveButton.whenPressed(new PIDMove(40, Robot.dt, RobotMap.distEncAvg));
+		PIDMoveButton.whenPressed(new PIDMove(40, robot.dt, robot.dt.distEncAvg, robot));
 		PIDTurnButton = new JoystickButton(leftJoy, getButton("PID Turn", 8));
-		PIDTurnButton.whenPressed(new PIDTurn(30, Robot.dt, RobotMap.fancyGyro));
+		PIDTurnButton.whenPressed(new PIDTurn(30, robot.dt, robot.dt.fancyGyro, robot));
 
 		rightJoy = new Joystick(1);
 		updatePIDConstantsButton = new JoystickButton(rightJoy, getButton("Get PID Constants", 8));
-		updatePIDConstantsButton.whenPressed(new UpdatePIDConstants());
+		updatePIDConstantsButton.whenPressed(new UpdatePIDConstants(robot));
 		updateEncoderDPPButton = new JoystickButton(rightJoy, getButton("Get Encoder Dist Per Pulse", 9));
-		updateEncoderDPPButton.whenPressed(new SetDistancePerPulse());
+		updateEncoderDPPButton.whenPressed(new SetDistancePerPulse(robot));
 
 		manipulator = new Joystick(2);
 	}

@@ -25,21 +25,47 @@ public class Drivetrain extends Subsystem implements DrivetrainInterface {
 	// Put methods for controlling this subsystem
 	// here. Call these from Commands.
 
-	private final Encoder leftEncDist = RobotMap.leftEncDist;
-	private final Encoder rightEncDist = RobotMap.rightEncDist;
-	private final PIDSourceAverage distEncAvg = RobotMap.distEncAvg;
-	private final SpeedControllerGroup dtLeft = RobotMap.dtLeft;
-	private final SpeedControllerGroup dtRight = RobotMap.dtRight;
-	private final DifferentialDrive robotDrive = RobotMap.robotDrive;
-	private final VelocityPIDController leftVelocityController = RobotMap.leftVelocityController;
-	private final VelocityPIDController rightVelocityController = RobotMap.rightVelocityController;
+	private Encoder leftEncDist;
+	private Encoder rightEncDist;
+	public PIDSourceAverage distEncAvg;
+	private SpeedControllerGroup dtLeft;
+	private SpeedControllerGroup dtRight;
+	private DifferentialDrive robotDrive;
+	private VelocityPIDController leftVelocityController;
+	private VelocityPIDController rightVelocityController;
 
-	private final AHRS fancyGyro = RobotMap.fancyGyro;
-	private final DoubleSolenoid dtGear = RobotMap.dtGear;
+	public AHRS fancyGyro;
+	private DoubleSolenoid dtGear;
+
+	private Robot robot;
+
+	/**
+	 * Constructs this subsystem and instantiates all of its components.
+	 * 
+	 * @param robotMap
+	 *            the actual RobotMap object, created in Robot
+	 * @param robot
+	 *            the actual Robot object, for non-static purposes
+	 */
+	public Drivetrain(RobotMap robotMap, Robot robot) {
+		leftEncDist = robotMap.leftEncDist;
+		rightEncDist = robotMap.rightEncDist;
+		distEncAvg = robotMap.distEncAvg;
+		dtLeft = robotMap.dtLeft;
+		dtRight = robotMap.dtRight;
+		robotDrive = robotMap.robotDrive;
+		leftVelocityController = robotMap.leftVelocityController;
+		rightVelocityController = robotMap.rightVelocityController;
+
+		fancyGyro = robotMap.fancyGyro;
+		dtGear = robotMap.dtGear;
+
+		this.robot = robot;
+	}
 
 	@Override
 	public void initDefaultCommand() {
-		setDefaultCommand(new TeleopDrive());
+		setDefaultCommand(new TeleopDrive(robot));
 	}
 
 	/**
@@ -47,14 +73,14 @@ public class Drivetrain extends Subsystem implements DrivetrainInterface {
 	 */
 	@Override
 	public void teleopDrive() {
-		if (Robot.getBool("Arcade Drive", true)) {
-			if (Robot.getBool("Arcade Drive Default Setup", true)) {
-				Robot.dt.arcadeDrive(Robot.oi.leftJoy.getY(), Robot.oi.rightJoy.getX());
+		if (robot.getBool("Arcade Drive", true)) {
+			if (robot.getBool("Arcade Drive Default Setup", true)) {
+				arcadeDrive(robot.oi.leftJoy.getY(), robot.oi.rightJoy.getX());
 			} else {
-				Robot.dt.arcadeDrive(Robot.oi.rightJoy.getY(), Robot.oi.leftJoy.getX());
+				arcadeDrive(robot.oi.rightJoy.getY(), robot.oi.leftJoy.getX());
 			}
 		} else {
-			Robot.dt.tankDrive(Robot.oi.leftJoy.getY(), Robot.oi.rightJoy.getY());
+			tankDrive(robot.oi.leftJoy.getY(), robot.oi.rightJoy.getY());
 		}
 	}
 
@@ -68,7 +94,7 @@ public class Drivetrain extends Subsystem implements DrivetrainInterface {
 	 */
 	@Override
 	public void arcadeDrive(double speed, double turn) {
-		robotDrive.arcadeDrive(speed, turn, Robot.getBool("Square Drive Values", false));
+		robotDrive.arcadeDrive(speed, turn, robot.getBool("Square Drive Values", false));
 	}
 
 	/**
@@ -81,7 +107,7 @@ public class Drivetrain extends Subsystem implements DrivetrainInterface {
 	 */
 	@Override
 	public void tankDrive(double leftSpeed, double rightSpeed) {
-		robotDrive.tankDrive(leftSpeed, rightSpeed, Robot.getBool("Square Drive Values", false));
+		robotDrive.tankDrive(leftSpeed, rightSpeed, robot.getBool("Square Drive Values", false));
 	}
 
 	/**
@@ -111,10 +137,10 @@ public class Drivetrain extends Subsystem implements DrivetrainInterface {
 	 */
 	@Override
 	public void updatePidConstants() {
-		leftVelocityController.setPID(Robot.getConst("VelocityLeftkP", 1), Robot.getConst("VelocityLeftkI", 0),
-				Robot.getConst("VelocityLeftkD", 0));
-		rightVelocityController.setPID(Robot.getConst("VelocityRightkP", 1), Robot.getConst("VelocityRightkI", 0),
-				Robot.getConst("VelocityRightkD", 0));
+		leftVelocityController.setPID(robot.getConst("VelocityLeftkP", 1), robot.getConst("VelocityLeftkI", 0),
+				robot.getConst("VelocityLeftkD", 0));
+		rightVelocityController.setPID(robot.getConst("VelocityRightkP", 1), robot.getConst("VelocityRightkI", 0),
+				robot.getConst("VelocityRightkD", 0));
 		resetVelocityPIDkFConsts();
 	}
 
@@ -214,11 +240,10 @@ public class Drivetrain extends Subsystem implements DrivetrainInterface {
 	 * 
 	 * @param highGear
 	 *            If the solenoid is to be pushed into high gear (true, kForward) or
-	 *            low gear (false, kReverse)
 	 */
 	@Override
 	public void shiftGears(boolean highGear) {
-		if (highGear ^ Robot.getBool("Drivetrain Gear Shift Low", false)) {
+		if (highGear ^ robot.getBool("Drivetrain Gear Shift Low", false)) {
 			dtGear.set(DoubleSolenoid.Value.kForward);
 		} else {
 			dtGear.set(DoubleSolenoid.Value.kReverse);
@@ -257,10 +282,10 @@ public class Drivetrain extends Subsystem implements DrivetrainInterface {
 	 */
 	@Override
 	public double getCurrentMaxSpeed() {
-		if (Robot.getBool("High Gear", true)) {
-			return Robot.getConst("Max High Speed", 204);
+		if (robot.getBool("High Gear", true)) {
+			return robot.getConst("Max High Speed", 204);
 		} else {
-			return Robot.getConst("Max Low Speed", 84);
+			return robot.getConst("Max Low Speed", 84);
 		}
 	}
 }

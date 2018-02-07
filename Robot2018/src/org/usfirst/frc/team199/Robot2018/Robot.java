@@ -38,31 +38,31 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  */
 public class Robot extends TimedRobot {
 
-	public static Climber climber;
-	public static ClimberAssist climberAssist;
-	public static IntakeEject intakeEject;
-	public static Lift lift;
-	public static RobotMap rmap;
-	public static Drivetrain dt;
-	public static Listener listen;
+	public RobotMap rmap;
+	public Drivetrain dt;
+	public Lift lift;
+	public IntakeEject intakeEject;
+	public Climber climber;
+	public ClimberAssist climberAssist;
+	public Listener listen;
 
-	public static OI oi;
+	public OI oi;
 
-	public static Map<String, ArrayList<String[]>> autoScripts;
+	public Map<String, ArrayList<String[]>> autoScripts;
 
 	Command autonomousCommand;
 	SendableChooser<Position> posChooser = new SendableChooser<Position>();
 	Map<String, SendableChooser<Strategy>> stratChoosers = new HashMap<String, SendableChooser<Strategy>>();
 	String[] fmsPossibilities = { "LL", "LR", "RL", "RR" };
 
-	public static double getConst(String key, double def) {
+	public double getConst(String key, double def) {
 		if (!SmartDashboard.containsKey("Const/" + key)) {
 			SmartDashboard.putNumber("Const/" + key, def);
 		}
 		return SmartDashboard.getNumber("Const/" + key, def);
 	}
 
-	public static boolean getBool(String key, boolean def) {
+	public boolean getBool(String key, boolean def) {
 		if (!SmartDashboard.containsKey("Bool/" + key)) {
 			SmartDashboard.putBoolean("Bool/" + key, def);
 		}
@@ -70,18 +70,19 @@ public class Robot extends TimedRobot {
 	}
 
 	/**
-	 * This function is run when the robot is first started up and should be
-	 * used for any initialization code.
+	 * This function is run when the robot is first started up and should be used
+	 * for any initialization code.
 	 */
 	@Override
 	public void robotInit() {
-		rmap = new RobotMap();
-		climber = new Climber();
+		rmap = new RobotMap(this);
+		dt = new Drivetrain(rmap, this);
+		lift = new Lift(rmap);
+		intakeEject = new IntakeEject(rmap);
+		climber = new Climber(rmap);
 		climberAssist = new ClimberAssist();
-		intakeEject = new IntakeEject();
-		lift = new Lift();
-		dt = new Drivetrain();
-		oi = new OI();
+
+		oi = new OI(this);
 
 		// auto position chooser
 		for (Position p : Position.values()) {
@@ -106,13 +107,13 @@ public class Robot extends TimedRobot {
 		// reboots
 		autoScripts = AutoUtils.parseScriptFile(Preferences.getInstance().getString("autoscripts", ""));
 
-		listen = new Listener();
+		listen = new Listener(this);
 	}
 
 	/**
-	 * This function is called once each time the robot enters Disabled mode.
-	 * You can use it to reset any subsystem information you want to clear when
-	 * the robot is disabled.
+	 * This function is called once each time the robot enters Disabled mode. You
+	 * can use it to reset any subsystem information you want to clear when the
+	 * robot is disabled.
 	 */
 	@Override
 	public void disabledInit() {
@@ -125,9 +126,9 @@ public class Robot extends TimedRobot {
 	}
 
 	/**
-	 * This function is called once during the start of autonomous in order to
-	 * grab values from SmartDashboard and the FMS and call the Autonomous
-	 * command with those values.
+	 * This function is called once during the start of autonomous in order to grab
+	 * values from SmartDashboard and the FMS and call the Autonomous command with
+	 * those values.
 	 */
 	@Override
 	public void autonomousInit() {
@@ -142,7 +143,7 @@ public class Robot extends TimedRobot {
 			strategies.put(key, chooser.getSelected());
 		}
 
-		Autonomous auto = new Autonomous(startPos, strategies, autoDelay, fmsInput, false);
+		Autonomous auto = new Autonomous(startPos, strategies, autoDelay, fmsInput, false, this);
 		auto.start();
 	}
 

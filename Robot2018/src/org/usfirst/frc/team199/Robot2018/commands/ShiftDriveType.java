@@ -10,16 +10,24 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  */
 public class ShiftDriveType extends InstantCommand {
 
-	public ShiftDriveType() {
+	private Robot robot;
+
+	/**
+	 * 
+	 * @param robot
+	 *            the actual Robot object, for non-static purposes
+	 */
+	public ShiftDriveType(Robot robot) {
 		super();
 		// Use requires() here to declare subsystem dependencies
 		// eg. requires(chassis);
+		this.robot = robot;
 	}
 
 	// Called once when the command executes
 	@Override
 	protected void initialize() {
-		SmartDashboard.putBoolean("Bool/Arcade Drive", !Robot.getBool("Arcade Drive", true));
+		SmartDashboard.putBoolean("Bool/Arcade Drive", !robot.getBool("Arcade Drive", true));
 	}
 
 }

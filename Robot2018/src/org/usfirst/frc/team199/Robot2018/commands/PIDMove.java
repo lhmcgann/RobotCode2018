@@ -17,6 +17,7 @@ public class PIDMove extends Command implements PIDOutput {
 	private double target;
 	private DrivetrainInterface dt;
 	private PIDController moveController;
+	private Robot robot;
 
 	/**
 	 * Constructs this command with a new PIDController. Sets all of the
@@ -31,15 +32,18 @@ public class PIDMove extends Command implements PIDOutput {
 	 *            testing)
 	 * @param avg
 	 *            the PIDSourceAverage of the DT's two Encoders
+	 * @param robot
+	 *            the actual Robot object, for non-static purposes
 	 */
-	public PIDMove(double targ, DrivetrainInterface dt, PIDSourceAverage avg) {
+	public PIDMove(double targ, DrivetrainInterface dt, PIDSourceAverage avg, Robot robot) {
 		// Use requires() here to declare subsystem dependencies
-		requires(Robot.dt);
+		requires(robot.dt);
 		target = targ;
 		this.dt = dt;
-		double kf = 1 / (dt.getCurrentMaxSpeed() * Robot.getConst("Default PID Update Time", 0.05));
-		moveController = new PIDController(Robot.getConst("MovekP", 1), Robot.getConst("MovekI", 0),
-				Robot.getConst("MovekD", 0), kf, avg, this);
+		this.robot = robot;
+		double kf = 1 / (dt.getCurrentMaxSpeed() * robot.getConst("Default PID Update Time", 0.05));
+		moveController = new PIDController(robot.getConst("MovekP", 1), robot.getConst("MovekI", 0),
+				robot.getConst("MovekD", 0), kf, avg, this);
 	}
 
 	/**
@@ -50,11 +54,11 @@ public class PIDMove extends Command implements PIDOutput {
 	public void initialize() {
 		dt.resetDistEncs();
 		// input is in inches
-		moveController.setInputRange(-Robot.getConst("Max High Speed", 204), Robot.getConst("Max High Speed", 204));
+		moveController.setInputRange(-robot.getConst("Max High Speed", 204), robot.getConst("Max High Speed", 204));
 		// output in "motor units" (arcade and tank only accept values [-1, 1]
 		moveController.setOutputRange(-1.0, 1.0);
 		moveController.setContinuous(false);
-		moveController.setAbsoluteTolerance(Robot.getConst("MoveTolerance", 2));
+		moveController.setAbsoluteTolerance(robot.getConst("MoveTolerance", 2));
 		moveController.setSetpoint(target);
 		moveController.enable();
 	}

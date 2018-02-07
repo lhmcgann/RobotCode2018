@@ -15,9 +15,18 @@ import edu.wpi.first.wpilibj.command.Command;
  * An example command. You can replace me with your own command.
  */
 public class TeleopDrive extends Command {
-	public TeleopDrive() {
+
+	private Robot robot;
+
+	/**
+	 * 
+	 * @param robot
+	 *            the actual Robot object, for non-static purposes
+	 */
+	public TeleopDrive(Robot robot) {
 		// Use requires() here to declare subsystem dependencies
-		requires(Robot.dt);
+		requires(robot.dt);
+		this.robot = robot;
 	}
 
 	// Called just before this Command runs the first time
@@ -28,7 +37,7 @@ public class TeleopDrive extends Command {
 	// Called repeatedly when this Command is scheduled to run
 	@Override
 	protected void execute() {
-		Robot.dt.teleopDrive();
+		robot.dt.teleopDrive();
 	}
 
 	// Make this return true when this Command no longer needs to run execute()
@@ -40,7 +49,7 @@ public class TeleopDrive extends Command {
 	// Called once after isFinished returns true
 	@Override
 	protected void end() {
-		Robot.dt.disableVelocityPIDs();
+		robot.dt.disableVelocityPIDs();
 	}
 
 	// Called when another command which requires one or more of the same

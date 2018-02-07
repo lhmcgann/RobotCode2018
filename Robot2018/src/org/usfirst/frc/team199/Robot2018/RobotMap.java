@@ -32,33 +32,35 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  */
 public class RobotMap {
 
-	public static WPI_TalonSRX intakeMotor;
-	public static WPI_TalonSRX liftMotor;
-	public static WPI_TalonSRX climberMotor;
+	public WPI_TalonSRX intakeMotor;
+	public WPI_TalonSRX liftMotor;
+	public WPI_TalonSRX climberMotor;
 
-	public static DigitalSource leftEncPort1;
-	public static DigitalSource leftEncPort2;
-	public static Encoder leftEncDist;
-	public static Encoder leftEncRate;
-	public static WPI_TalonSRX dtLeftMaster;
-	public static WPI_VictorSPX dtLeftSlave;
-	public static SpeedControllerGroup dtLeft;
-	public static VelocityPIDController leftVelocityController;
+	public DigitalSource leftEncPort1;
+	public DigitalSource leftEncPort2;
+	public Encoder leftEncDist;
+	public Encoder leftEncRate;
+	public WPI_TalonSRX dtLeftMaster;
+	public WPI_VictorSPX dtLeftSlave;
+	public SpeedControllerGroup dtLeft;
+	public VelocityPIDController leftVelocityController;
 
-	public static DigitalSource rightEncPort1;
-	public static DigitalSource rightEncPort2;
-	public static Encoder rightEncDist;
-	public static Encoder rightEncRate;
-	public static WPI_TalonSRX dtRightMaster;
-	public static WPI_VictorSPX dtRightSlave;
-	public static SpeedControllerGroup dtRight;
-	public static VelocityPIDController rightVelocityController;
+	public DigitalSource rightEncPort1;
+	public DigitalSource rightEncPort2;
+	public Encoder rightEncDist;
+	public Encoder rightEncRate;
+	public WPI_TalonSRX dtRightMaster;
+	public WPI_VictorSPX dtRightSlave;
+	public SpeedControllerGroup dtRight;
+	public VelocityPIDController rightVelocityController;
 
-	public static DifferentialDrive robotDrive;
-	public static PIDSourceAverage distEncAvg;
+	public DifferentialDrive robotDrive;
+	public PIDSourceAverage distEncAvg;
 
-	public static AHRS fancyGyro;
-	public static DoubleSolenoid dtGear;
+	public AHRS fancyGyro;
+	public DoubleSolenoid dtGear;
+
+	public Robot robot;
 
 	/**
 	 * This function takes in a TalonSRX motorController and sets nominal and peak
@@ -69,7 +71,7 @@ public class RobotMap {
 	 */
 	private void configSRX(WPI_TalonSRX mc) {
 		// stuff cole said to put
-		int kTimeout = (int) Robot.getConst("kTimeoutMs", 10);
+		int kTimeout = (int) robot.getConst("kTimeoutMs", 10);
 		mc.configNominalOutputForward(0, kTimeout);
 		mc.configNominalOutputReverse(0, kTimeout);
 		mc.configPeakOutputForward(1, kTimeout);
@@ -93,14 +95,22 @@ public class RobotMap {
 	 */
 	private void configSPX(WPI_VictorSPX mc) {
 		// stuff cole said to put
-		int kTimeout = (int) Robot.getConst("kTimeoutMs", 10);
+		int kTimeout = (int) robot.getConst("kTimeoutMs", 10);
 		mc.configNominalOutputForward(0, kTimeout);
 		mc.configNominalOutputReverse(0, kTimeout);
 		mc.configPeakOutputForward(1, kTimeout);
 		mc.configPeakOutputReverse(-1, kTimeout);
 	}
 
-	public RobotMap() {
+	/**
+	 * Instantiates all components of the robot and sets the appropriate settings.
+	 * 
+	 * @param robot
+	 *            the actual Robot object, for non-static purposes
+	 */
+	public RobotMap(Robot robot) {
+
+		this.robot = robot;
 
 		intakeMotor = new WPI_TalonSRX(getPort("IntakeTalonSRX", 4));
 		configSRX(intakeMotor);
@@ -121,15 +131,15 @@ public class RobotMap {
 		configSPX(dtLeftSlave);
 		dtLeft = new SpeedControllerGroup(dtLeftMaster, dtLeftSlave);
 
-		leftVelocityController = new VelocityPIDController(Robot.getConst("VelocityLeftkP", 1),
-				Robot.getConst("VelocityLeftkI", 0), Robot.getConst("VelocityLeftkD", 0),
-				1 / Robot.getConst("Max Low Speed", 84), leftEncRate, dtLeft);
+		leftVelocityController = new VelocityPIDController(robot.getConst("VelocityLeftkP", 1),
+				robot.getConst("VelocityLeftkI", 0), robot.getConst("VelocityLeftkD", 0),
+				1 / robot.getConst("Max Low Speed", 84), leftEncRate, dtLeft);
 		leftVelocityController.enable();
-		leftVelocityController.setInputRange(-Robot.getConst("Max High Speed", 204),
-				Robot.getConst("Max High Speed", 204));
+		leftVelocityController.setInputRange(-robot.getConst("Max High Speed", 204),
+				robot.getConst("Max High Speed", 204));
 		leftVelocityController.setOutputRange(-1.0, 1.0);
 		leftVelocityController.setContinuous(false);
-		leftVelocityController.setAbsoluteTolerance(Robot.getConst("VelocityToleranceLeft", 2));
+		leftVelocityController.setAbsoluteTolerance(robot.getConst("VelocityToleranceLeft", 2));
 
 		rightEncPort1 = new DigitalInput(getPort("1RightEnc", 2));
 		rightEncPort2 = new DigitalInput(getPort("2RightEnc", 3));
@@ -143,18 +153,18 @@ public class RobotMap {
 		configSPX(dtRightSlave);
 		dtRight = new SpeedControllerGroup(dtRightMaster, dtRightSlave);
 
-		rightVelocityController = new VelocityPIDController(Robot.getConst("VelocityRightkP", 1),
-				Robot.getConst("VelocityRightkI", 0), Robot.getConst("VelocityRightkD", 0),
-				1 / Robot.getConst("Max Low Speed", 84), rightEncRate, dtRight);
+		rightVelocityController = new VelocityPIDController(robot.getConst("VelocityRightkP", 1),
+				robot.getConst("VelocityRightkI", 0), robot.getConst("VelocityRightkD", 0),
+				1 / robot.getConst("Max Low Speed", 84), rightEncRate, dtRight);
 		rightVelocityController.enable();
-		rightVelocityController.setInputRange(-Robot.getConst("Max High Speed", 204),
-				Robot.getConst("Max High Speed", 204));
+		rightVelocityController.setInputRange(-robot.getConst("Max High Speed", 204),
+				robot.getConst("Max High Speed", 204));
 		rightVelocityController.setOutputRange(-1.0, 1.0);
 		rightVelocityController.setContinuous(false);
-		rightVelocityController.setAbsoluteTolerance(Robot.getConst("VelocityToleranceRight", 2));
+		rightVelocityController.setAbsoluteTolerance(robot.getConst("VelocityToleranceRight", 2));
 
 		robotDrive = new DifferentialDrive(leftVelocityController, rightVelocityController);
-		robotDrive.setMaxOutput(Robot.getConst("Max High Speed", 204));
+		robotDrive.setMaxOutput(robot.getConst("Max High Speed", 204));
 
 		distEncAvg = new PIDSourceAverage(leftEncDist, rightEncDist);
 		fancyGyro = new AHRS(SerialPort.Port.kMXP);

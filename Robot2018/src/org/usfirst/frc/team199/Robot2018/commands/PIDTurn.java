@@ -18,6 +18,7 @@ public class PIDTurn extends Command implements PIDOutput {
 	private double target;
 	private DrivetrainInterface dt;
 	private PIDController turnController;
+	private Robot robot;
 
 	/**
 	 * Constructs this command with a new PIDController. Sets all of the
@@ -33,19 +34,22 @@ public class PIDTurn extends Command implements PIDOutput {
 	 *            testing)
 	 * @param ahrs
 	 *            the AHRS (gyro)
+	 * @param robot
+	 *            the actual Robot object, for non-static purposes
 	 */
-	public PIDTurn(double targ, DrivetrainInterface dt, AHRS ahrs) {
+	public PIDTurn(double targ, DrivetrainInterface dt, AHRS ahrs, Robot robot) {
 		// Use requires() here to declare subsystem dependencies
-		requires(Robot.dt);
+		requires(robot.dt);
 		target = targ;
 		this.dt = dt;
+		this.robot = robot;
 		// calculates the maximum turning speed in degrees/sec based on the max linear
 		// speed in inches/s and the distance (inches) between sides of the DT
 		double maxTurnSpeed = dt.getCurrentMaxSpeed() * 360
-				/ (Math.PI * Robot.getConst("Distance Between Wheels", 26.25));
-		double kf = 1 / (maxTurnSpeed * Robot.getConst("Default PID Update Time", 0.05));
-		turnController = new PIDController(Robot.getConst("TurnkP", 1), Robot.getConst("TurnkI", 0),
-				Robot.getConst("TurnkD", 0), kf, ahrs, this);
+				/ (Math.PI * robot.getConst("Distance Between Wheels", 26.25));
+		double kf = 1 / (maxTurnSpeed * robot.getConst("Default PID Update Time", 0.05));
+		turnController = new PIDController(robot.getConst("TurnkP", 1), robot.getConst("TurnkI", 0),
+				robot.getConst("TurnkD", 0), kf, ahrs, this);
 	}
 
 	/**
@@ -61,7 +65,7 @@ public class PIDTurn extends Command implements PIDOutput {
 		// output in "motor units" (arcade and tank only accept values [-1, 1]
 		turnController.setOutputRange(-1.0, 1.0);
 		turnController.setContinuous();
-		turnController.setAbsoluteTolerance(Robot.getConst("TurnTolerance", 1));
+		turnController.setAbsoluteTolerance(robot.getConst("TurnTolerance", 1));
 		turnController.setSetpoint(target);
 		turnController.enable();
 	}

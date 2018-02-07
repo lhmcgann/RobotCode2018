@@ -9,15 +9,23 @@ import edu.wpi.first.wpilibj.command.InstantCommand;
  */
 public class UpdatePIDConstants extends InstantCommand {
 
-	public UpdatePIDConstants() {
+	private Robot robot;
+
+	/**
+	 * 
+	 * @param robot
+	 *            the actual Robot object, for non-static purposes
+	 */
+	public UpdatePIDConstants(Robot robot) {
 		super();
 		// Use requires() here to declare subsystem dependencies
 		// eg. requires(chassis);
+		this.robot = robot;
 	}
 
 	// Called just before this Command runs the first time
 	@Override
 	protected void initialize() {
-		Robot.dt.updatePidConstants();
+		robot.dt.updatePidConstants();
 	}
 }

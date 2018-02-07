@@ -9,8 +9,16 @@ import edu.wpi.first.wpilibj.command.InstantCommand;
  */
 public class SetDistancePerPulse extends InstantCommand {
 
-	public SetDistancePerPulse() {
+	private Robot robot;
+
+	/**
+	 * 
+	 * @param robot
+	 *            the actual Robot object, for non-static purposes
+	 */
+	public SetDistancePerPulse(Robot robot) {
 		super();
+		this.robot = robot;
 		// Use requires() here to declare subsystem dependencies
 		// eg. requires(chassis);
 	}
@@ -18,7 +26,7 @@ public class SetDistancePerPulse extends InstantCommand {
 	// Called just before this Command runs the first time
 	@Override
 	protected void initialize() {
-		Robot.dt.setDistancePerPulseLeft(Robot.getConst("Distance Per Pulse Left", 0.184));
-		Robot.dt.setDistancePerPulseRight(Robot.getConst("Distance Per Pulse Right", 0.184));
+		robot.dt.setDistancePerPulseLeft(robot.getConst("Distance Per Pulse Left", 0.184));
+		robot.dt.setDistancePerPulseRight(robot.getConst("Distance Per Pulse Right", 0.184));
 	}
 }
