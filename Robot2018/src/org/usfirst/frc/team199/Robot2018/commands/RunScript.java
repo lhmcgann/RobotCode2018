@@ -3,6 +3,7 @@ package org.usfirst.frc.team199.Robot2018.commands;
 import java.util.ArrayList;
 
 import org.usfirst.frc.team199.Robot2018.Robot;
+import org.usfirst.frc.team199.Robot2018.autonomous.AutoUtils;
 
 import edu.wpi.first.wpilibj.command.CommandGroup;
 import edu.wpi.first.wpilibj.command.WaitCommand;
@@ -12,13 +13,11 @@ import edu.wpi.first.wpilibj.command.WaitCommand;
  */
 public class RunScript extends CommandGroup {
 
-	/**
-	 * 
-	 * @param robot
-	 *            the actual Robot object, for non-static purposes
-	 */
+	private Robot rob;
+
 	public RunScript(String scriptName, Robot robot) {
-		ArrayList<String[]> script = robot.autoScripts.getOrDefault(scriptName, new ArrayList<String[]>());
+		rob = robot;
+		ArrayList<String[]> script = rob.autoScripts.getOrDefault(scriptName, new ArrayList<String[]>());
 
 		outerloop: for (String[] cmd : script) {
 			String cmdName = cmd[0];
@@ -26,13 +25,20 @@ public class RunScript extends CommandGroup {
 
 			switch (cmdName) {
 			case "moveto":
-				addSequential(new AutoMoveTo(cmdArgs.split(" ")));
+				addSequential(new AutoMoveTo(cmdArgs.split(" "), rob));
 				break;
 			case "turn":
-				addSequential(new AutoTurn(Double.parseDouble(cmdArgs)));
+				if (AutoUtils.isPoint(cmdArgs)) {
+					double[] point = AutoUtils.parsePoint(cmdArgs);
+					addSequential(new PIDTurn(point, rob.dt, rob.sd, rob.dt.getGyro(), rob));
+				} else {
+					double rotation = Double.parseDouble(cmdArgs);
+					addSequential(new PIDTurn(rotation, rob.dt, rob.sd, rob.dt.getGyro(), rob));
+				}
 				break;
 			case "move":
-				addSequential(new AutoMove(Double.parseDouble(cmdArgs)));
+				double distance = Double.parseDouble(cmdArgs);
+				addSequential(new PIDMove(distance, rob.dt, rob.sd, rob.dt.getDistEncAvg(), rob));
 				break;
 			case "switch":
 				addSequential(new EjectToSwitch());
@@ -47,10 +53,10 @@ public class RunScript extends CommandGroup {
 				addSequential(new WaitCommand(Double.parseDouble(cmdArgs)));
 				break;
 			case "intake":
-				addSequential(new IntakeCube());
+				addSequential(new IntakeCube(rob));
 				break;
 			case "jump":
-				addSequential(new RunScript(cmdArgs, robot));
+				addSequential(new RunScript(cmdArgs, rob));
 				break;
 			case "end":
 				break outerloop;

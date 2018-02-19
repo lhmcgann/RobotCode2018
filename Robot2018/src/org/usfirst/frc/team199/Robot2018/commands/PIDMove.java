@@ -1,12 +1,15 @@
 package org.usfirst.frc.team199.Robot2018.commands;
 
 import org.usfirst.frc.team199.Robot2018.Robot;
-import org.usfirst.frc.team199.Robot2018.autonomous.PIDSourceAverage;
+import org.usfirst.frc.team199.Robot2018.SmartDashboardInterface;
+import org.usfirst.frc.team199.Robot2018.autonomous.AutoUtils;
 import org.usfirst.frc.team199.Robot2018.subsystems.DrivetrainInterface;
 
 import edu.wpi.first.wpilibj.PIDController;
 import edu.wpi.first.wpilibj.PIDOutput;
+import edu.wpi.first.wpilibj.PIDSource;
 import edu.wpi.first.wpilibj.command.Command;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
  * Drives the robot a certain target distance using PID. Implements PIDOutput in
@@ -17,7 +20,8 @@ public class PIDMove extends Command implements PIDOutput {
 	private double target;
 	private DrivetrainInterface dt;
 	private PIDController moveController;
-	private Robot robot;
+	private Robot rob;
+	private PIDSource avg;
 
 	/**
 	 * Constructs this command with a new PIDController. Sets all of the
@@ -30,20 +34,60 @@ public class PIDMove extends Command implements PIDOutput {
 	 * @param dt
 	 *            the Drivetrain (for actual code) or a DrivetrainInterface (for
 	 *            testing)
+	 * @param sd
+	 *            the SmartDashboard
 	 * @param avg
 	 *            the PIDSourceAverage of the DT's two Encoders
 	 * @param robot
 	 *            the actual Robot object, for non-static purposes
 	 */
-	public PIDMove(double targ, DrivetrainInterface dt, PIDSourceAverage avg, Robot robot) {
+	public PIDMove(double targ, DrivetrainInterface dt, SmartDashboardInterface sd, PIDSource avg, Robot robot) {
 		// Use requires() here to declare subsystem dependencies
-		requires(robot.dt);
+		rob = robot;
 		target = targ;
 		this.dt = dt;
-		this.robot = robot;
-		double kf = 1 / (dt.getCurrentMaxSpeed() * robot.getConst("Default PID Update Time", 0.05));
-		moveController = new PIDController(robot.getConst("MovekP", 1), robot.getConst("MovekI", 0),
-				robot.getConst("MovekD", 0), kf, avg, this);
+		this.avg = avg;
+		if (robot.dt != null) {
+			requires(robot.dt);
+		}
+		double kf = 1 / (dt.getCurrentMaxSpeed() * sd.getConst("Default PID Update Time", 0.05));
+		moveController = new PIDController(sd.getConst("MovekP", 0.1), sd.getConst("MovekI", 0),
+				sd.getConst("MovekD", 0), kf, avg, this);
+		SmartDashboard.putData("Move PID", moveController);
+	}
+
+	/**
+	 * Constructs this command with a new PIDController. Sets all of the
+	 * controller's PID constants based on SD prefs. Sets the controller's PIDSource
+	 * to the encoder average object and sets its PIDOutput to this command which
+	 * implements PIDOutput's pidWrite() method.
+	 * 
+	 * @param point
+	 *            the target point in inches, absolute distance from the starting
+	 *            point
+	 * @param dt
+	 *            the Drivetrain (for actual code) or a DrivetrainInterface (for
+	 *            testing)
+	 * @param sd
+	 *            the SmartDashboard
+	 * @param avg
+	 *            the PIDSorceAverage of the DT's two Encoders
+	 */
+	public PIDMove(double[] point, DrivetrainInterface dt, SmartDashboardInterface sd, PIDSource avg, Robot robot) {
+		double dx = point[0] - AutoUtils.position.getX();
+		double dy = point[1] - AutoUtils.position.getY();
+
+		double dist = Math.sqrt(dx * dx + dy * dy); // pythagorean theorem to find distance
+
+		this.target = dist;
+		this.dt = dt;
+		this.avg = avg;
+		if (robot.dt != null) {
+			requires(robot.dt);
+		}
+		double kf = 1 / (dt.getCurrentMaxSpeed() * sd.getConst("Default PID Update Time", 0.05));
+		moveController = new PIDController(sd.getConst("MovekP", 1), sd.getConst("MovekI", 0), sd.getConst("MovekD", 0),
+				kf, avg, this);
 	}
 
 	/**
@@ -53,14 +97,17 @@ public class PIDMove extends Command implements PIDOutput {
 	@Override
 	public void initialize() {
 		dt.resetDistEncs();
+		moveController.disable();
 		// input is in inches
-		moveController.setInputRange(-robot.getConst("Max High Speed", 204), robot.getConst("Max High Speed", 204));
+		moveController.setInputRange(-rob.getConst("Max High Speed", 204), rob.getConst("Max High Speed", 204));
 		// output in "motor units" (arcade and tank only accept values [-1, 1]
 		moveController.setOutputRange(-1.0, 1.0);
 		moveController.setContinuous(false);
-		moveController.setAbsoluteTolerance(robot.getConst("MoveTolerance", 2));
+		moveController.setAbsoluteTolerance(rob.getConst("MoveTolerance", 0.1));
 		moveController.setSetpoint(target);
+
 		moveController.enable();
+		// dt.enableVelocityPIDs();
 	}
 
 	/**
@@ -70,6 +117,9 @@ public class PIDMove extends Command implements PIDOutput {
 	 */
 	@Override
 	protected void execute() {
+		System.out.println("Enc Avg Dist: " + avg.pidGet());
+		SmartDashboard.putNumber("Move PID Result", moveController.get());
+		SmartDashboard.putNumber("Move PID Error", moveController.getError());
 	}
 
 	/**
@@ -80,7 +130,9 @@ public class PIDMove extends Command implements PIDOutput {
 	 */
 	@Override
 	protected boolean isFinished() {
-		return moveController.onTarget();
+		return moveController.onTarget()
+				&& Math.abs(dt.getLeftEncRate()) <= rob.getConst("Maximum Velocity When Stop", 1)
+				&& Math.abs(dt.getRightEncRate()) <= rob.getConst("Maximum Velocity When Stop", 1);
 	}
 
 	/**
@@ -91,7 +143,15 @@ public class PIDMove extends Command implements PIDOutput {
 	@Override
 	protected void end() {
 		moveController.disable();
-		moveController.free();
+		System.out.println("End");
+		// moveController.free();
+
+		double angle = Math.toRadians(AutoUtils.position.getRot());
+		double dist = avg.pidGet();
+		double x = Math.cos(angle) * dist;
+		double y = Math.sin(angle) * dist;
+		AutoUtils.position.changeX(x);
+		AutoUtils.position.changeY(y);
 	}
 
 	/**
@@ -117,5 +177,6 @@ public class PIDMove extends Command implements PIDOutput {
 	@Override
 	public void pidWrite(double output) {
 		dt.arcadeDrive(output, 0);
+		SmartDashboard.putNumber("Move PID Output", output);
 	}
 }

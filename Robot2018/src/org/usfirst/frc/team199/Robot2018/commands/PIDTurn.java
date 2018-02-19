@@ -1,13 +1,16 @@
 package org.usfirst.frc.team199.Robot2018.commands;
 
 import org.usfirst.frc.team199.Robot2018.Robot;
+import org.usfirst.frc.team199.Robot2018.SmartDashboardInterface;
+import org.usfirst.frc.team199.Robot2018.autonomous.AutoUtils;
 import org.usfirst.frc.team199.Robot2018.subsystems.DrivetrainInterface;
-
-import com.kauailabs.navx.frc.AHRS;
 
 import edu.wpi.first.wpilibj.PIDController;
 import edu.wpi.first.wpilibj.PIDOutput;
+import edu.wpi.first.wpilibj.PIDSource;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.command.Command;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
  * Turns the robot to a certain target bearing using PID. Implements PIDOutput
@@ -18,7 +21,10 @@ public class PIDTurn extends Command implements PIDOutput {
 	private double target;
 	private DrivetrainInterface dt;
 	private PIDController turnController;
-	private Robot robot;
+	private Robot rob;
+	private PIDSource ahrs;
+	private Timer tim;
+	private double lastTime;
 
 	/**
 	 * Constructs this command with a new PIDController. Sets all of the
@@ -34,22 +40,102 @@ public class PIDTurn extends Command implements PIDOutput {
 	 *            testing)
 	 * @param ahrs
 	 *            the AHRS (gyro)
+	 * @param sd
+	 *            the Smart Dashboard reference, or a SmartDashboardInterface for
+	 *            testing
+	 * @param absolute
+	 *            whether the target passed is absolute or relative
+	 * 
 	 * @param robot
 	 *            the actual Robot object, for non-static purposes
 	 */
-	public PIDTurn(double targ, DrivetrainInterface dt, AHRS ahrs, Robot robot) {
+	public PIDTurn(double targ, DrivetrainInterface dt, SmartDashboardInterface sd, PIDSource ahrs, boolean absolute,
+			Robot robot) {
 		// Use requires() here to declare subsystem dependencies
-		requires(robot.dt);
-		target = targ;
+		rob = robot;
 		this.dt = dt;
-		this.robot = robot;
+		this.ahrs = ahrs;
+
+		if (absolute) {
+			target = targ - AutoUtils.position.getRot();
+		} else {
+			target = targ;
+		}
+
+		if (rob.dt != null) {
+			requires(rob.dt);
+		}
 		// calculates the maximum turning speed in degrees/sec based on the max linear
 		// speed in inches/s and the distance (inches) between sides of the DT
-		double maxTurnSpeed = dt.getCurrentMaxSpeed() * 360
-				/ (Math.PI * robot.getConst("Distance Between Wheels", 26.25));
-		double kf = 1 / (maxTurnSpeed * robot.getConst("Default PID Update Time", 0.05));
-		turnController = new PIDController(robot.getConst("TurnkP", 1), robot.getConst("TurnkI", 0),
-				robot.getConst("TurnkD", 0), kf, ahrs, this);
+		double maxTurnSpeed = dt.getCurrentMaxSpeed() * 360 / (Math.PI * sd.getConst("Distance Between Wheels", 26.25));
+		double kf = 1 / (maxTurnSpeed * sd.getConst("Default PID Update Time", 0.05));
+		turnController = new PIDController(sd.getConst("TurnkP", 1), sd.getConst("TurnkI", 0), sd.getConst("TurnkD", 0),
+				kf, ahrs, this);
+		// tim = new Timer();
+	}
+
+	/**
+	 * Constructs this command with a new PIDController. Sets all of the
+	 * controller's PID constants based on SD prefs. Sets the controller's PIDSource
+	 * to the AHRS (gyro) object and sets its PIDOutput to this command which
+	 * implements PIDOutput's pidWrite() method.
+	 * 
+	 * @param targ
+	 *            the target bearing (in degrees) to turn to (so negative if turning
+	 *            left, positive if turning right)
+	 * @param dt
+	 *            the Drivetrain (for actual code) or a DrivetrainInterface (for
+	 *            testing)
+	 * @param ahrs
+	 *            the AHRS (gyro)
+	 * @param sd
+	 *            the Smart Dashboard reference, or a SmartDashboardInterface for
+	 *            testing
+	 */
+	public PIDTurn(double targ, DrivetrainInterface dt, SmartDashboardInterface sd, PIDSource ahrs, Robot robot) {
+		this(targ, dt, sd, ahrs, false, robot);
+	}
+
+	/**
+	 * Constructs this command with a new PIDController. Sets all of the
+	 * controller's PID constants based on SD prefs. Sets the controller's PIDSource
+	 * to the AHRS (gyro) object and sets its PIDOutput to this command which
+	 * implements PIDOutput's pidWrite() method.
+	 * 
+	 * @param point
+	 *            the target point (in inches) to turn to, relative to the starting
+	 *            position
+	 * @param dt
+	 *            the Drivetrain (for actual code) or a DrivetrainInterface (for
+	 *            testing)
+	 * @param ahrs
+	 *            the AHRS (gyro)
+	 * @param sd
+	 *            the Smart Dashboard reference, or a SmartDashboardInterface for
+	 *            testing
+	 */
+	public PIDTurn(double[] point, DrivetrainInterface dt, SmartDashboardInterface sd, PIDSource ahrs, Robot robot) {
+		this.dt = dt;
+		this.ahrs = ahrs;
+		rob = robot;
+
+		double dx = point[0] - AutoUtils.position.getX();
+		double dy = point[1] - AutoUtils.position.getY();
+
+		double absTurn = Math.toDegrees(Math.atan2(dy, dx));
+		target = absTurn - AutoUtils.position.getRot();
+
+		if (rob.dt != null) {
+			requires(rob.dt);
+		}
+		// calculates the maximum turning speed in degrees/sec based on the max linear
+		// speed in inches/s and the distance (inches) between sides of the DT
+		double maxTurnSpeed = dt.getCurrentMaxSpeed() * 360 / (Math.PI * sd.getConst("Distance Between Wheels", 26.25));
+		double kf = 1 / (maxTurnSpeed * sd.getConst("Default PID Update Time", 0.05));
+		turnController = new PIDController(sd.getConst("TurnkP", 1), sd.getConst("TurnkI", 0), sd.getConst("TurnkD", 0),
+				kf, ahrs, this);
+		// tim = new Timer();
+		SmartDashboard.putData("Turn PID", turnController);
 	}
 
 	/**
@@ -58,16 +144,27 @@ public class PIDTurn extends Command implements PIDOutput {
 	 */
 	@Override
 	protected void initialize() {
-		dt.resetAHRS();
 		turnController.disable();
+		// dt.enableVelocityPIDs();
+		System.out.println("initialize2s");
+		// dt.resetAHRS();
+		System.out.println("after reset");
+		System.out.println("after disabling");
 		// input is in degrees
 		turnController.setInputRange(-180, 180);
 		// output in "motor units" (arcade and tank only accept values [-1, 1]
-		turnController.setOutputRange(-1.0, 1.0);
-		turnController.setContinuous();
-		turnController.setAbsoluteTolerance(robot.getConst("TurnTolerance", 1));
-		turnController.setSetpoint(target);
+		turnController.setOutputRange(rob.getConst("Output", 0.5) * -1, rob.getConst("Output", 0.5));
+		turnController.setContinuous(true);
+		turnController.setAbsoluteTolerance(rob.getConst("TurnTolerance", 1));
+		double newSetPoint = target + dt.getAHRSAngle();
+		while (Math.abs(newSetPoint) > 180) {
+			newSetPoint = newSetPoint - Math.signum(newSetPoint) * 360;
+		}
+		turnController.setSetpoint(newSetPoint);
 		turnController.enable();
+		System.out.println("initialize finished");
+		// tim.start();
+		// lastTime = tim.get();
 	}
 
 	/**
@@ -77,6 +174,12 @@ public class PIDTurn extends Command implements PIDOutput {
 	 */
 	@Override
 	protected void execute() {
+		System.out.println("execute");
+		System.out.println("Angle: " + dt.getAHRSAngle());
+		// if (tim.get() > lastTime + Robot.getConst("Update Time", 1)) {
+		// SmartDashboard.putNumber("Angle", dt.getAHRSAngle());
+		// lastTime = tim.get();
+		// }
 	}
 
 	/**
@@ -88,7 +191,13 @@ public class PIDTurn extends Command implements PIDOutput {
 	 */
 	@Override
 	protected boolean isFinished() {
-		return turnController.onTarget();
+		System.out.println("isFinished");
+		return (turnController.onTarget() && Math.abs(dt.getGyroRate()) < 1);
+		// return turnController.onTarget()
+		// && Math.abs(dt.getLeftEncRate()) <= Robot.getConst("Maximum Velocity When
+		// Stop", 1)
+		// && Math.abs(dt.getRightEncRate()) <= Robot.getConst("Maximum Velocity When
+		// Stop", 1);
 	}
 
 	/**
@@ -99,7 +208,12 @@ public class PIDTurn extends Command implements PIDOutput {
 	@Override
 	protected void end() {
 		turnController.disable();
-		turnController.free();
+		System.out.println("end");
+		SmartDashboard.putNumber("Turn PID Result", turnController.get());
+		SmartDashboard.putNumber("Turn PID Error", turnController.getError());
+		// turnController.free();
+
+		AutoUtils.position.changeRot(dt.getAHRSAngle());
 	}
 
 	/**
@@ -124,5 +238,6 @@ public class PIDTurn extends Command implements PIDOutput {
 	@Override
 	public void pidWrite(double output) {
 		dt.arcadeDrive(0, output);
+		SmartDashboard.putNumber("Turn PID Output", output);
 	}
 }

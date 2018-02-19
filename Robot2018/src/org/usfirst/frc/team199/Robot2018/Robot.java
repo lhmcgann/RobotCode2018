@@ -15,15 +15,17 @@ import org.usfirst.frc.team199.Robot2018.autonomous.AutoUtils;
 import org.usfirst.frc.team199.Robot2018.commands.Autonomous;
 import org.usfirst.frc.team199.Robot2018.commands.Autonomous.Position;
 import org.usfirst.frc.team199.Robot2018.commands.Autonomous.Strategy;
+import org.usfirst.frc.team199.Robot2018.commands.ShiftLowGear;
 import org.usfirst.frc.team199.Robot2018.subsystems.Climber;
 import org.usfirst.frc.team199.Robot2018.subsystems.ClimberAssist;
 import org.usfirst.frc.team199.Robot2018.subsystems.Drivetrain;
 import org.usfirst.frc.team199.Robot2018.subsystems.IntakeEject;
 import org.usfirst.frc.team199.Robot2018.subsystems.Lift;
 
+import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Preferences;
-import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.Scheduler;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -36,7 +38,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  * creating this project, you must also update the manifest file in the resource
  * directory.
  */
-public class Robot extends TimedRobot {
+public class Robot extends IterativeRobot {
 
 	public RobotMap rmap;
 	public Drivetrain dt;
@@ -55,18 +57,42 @@ public class Robot extends TimedRobot {
 	Map<String, SendableChooser<Strategy>> stratChoosers = new HashMap<String, SendableChooser<Strategy>>();
 	String[] fmsPossibilities = { "LL", "LR", "RL", "RR" };
 
-	public double getConst(String key, double def) {
-		if (!SmartDashboard.containsKey("Const/" + key)) {
-			SmartDashboard.putNumber("Const/" + key, def);
+	public SmartDashboardInterface sd = new SmartDashboardInterface() {
+		@Override
+		public double getConst(String key, double def) {
+			Preferences pref = Preferences.getInstance();
+			if (!pref.containsKey("Const/" + key)) {
+				pref.putDouble("Const/" + key, def);
+				if (pref.getDouble("Const/ + key", def) != def) {
+					System.err.println("pref Key" + "Const/" + key + "already taken by a different type");
+					return def;
+				}
+			}
+			return pref.getDouble("Const/" + key, def);
 		}
-		return SmartDashboard.getNumber("Const/" + key, def);
+		/*
+		 * if (!SmartDashboard.containsKey("Const/" + key)) { if
+		 * (!SmartDashboard.putNumber("Const/" + key, def)) {
+		 * System.err.println("SmartDashboard Key" + "Const/" + key +
+		 * "already taken by a different type"); return def; } } return
+		 * SmartDashboard.getNumber("Const/" + key, def);
+		 */
+	};
+
+	public double getConst(String key, double def) {
+		return sd.getConst(key, def);
 	}
 
 	public boolean getBool(String key, boolean def) {
-		if (!SmartDashboard.containsKey("Bool/" + key)) {
-			SmartDashboard.putBoolean("Bool/" + key, def);
+		Preferences pref = Preferences.getInstance();
+		if (!pref.containsKey("Bool/" + key)) {
+			pref.putBoolean("Bool/" + key, def);
+			if (pref.getBoolean("Bool/" + key, def) == def) {
+				System.err.println("pref Key" + "Bool/" + key + "already taken by a different type");
+				return def;
+			}
 		}
-		return SmartDashboard.getBoolean("Bool/" + key, def);
+		return pref.getBoolean("Bool/" + key, def);
 	}
 
 	/**
@@ -76,9 +102,9 @@ public class Robot extends TimedRobot {
 	@Override
 	public void robotInit() {
 		rmap = new RobotMap(this);
-		dt = new Drivetrain(rmap, this);
-		lift = new Lift(rmap);
-		intakeEject = new IntakeEject(rmap);
+		dt = new Drivetrain(this);
+		lift = new Lift(this);
+		intakeEject = new IntakeEject(this);
 		climber = new Climber(rmap);
 		climberAssist = new ClimberAssist();
 
@@ -103,11 +129,12 @@ public class Robot extends TimedRobot {
 		// auto delay chooser
 		SmartDashboard.putNumber("Auto Delay", 0);
 
-		// parse scripts from Preferences, which maintains values throughout
-		// reboots
+		// parse scripts from Preferences, which maintains values throughout reboots
 		autoScripts = AutoUtils.parseScriptFile(Preferences.getInstance().getString("autoscripts", ""));
 
 		listen = new Listener(this);
+		CameraServer.getInstance().startAutomaticCapture(0);
+		CameraServer.getInstance().startAutomaticCapture(1);
 	}
 
 	/**
@@ -132,6 +159,7 @@ public class Robot extends TimedRobot {
 	 */
 	@Override
 	public void autonomousInit() {
+		Scheduler.getInstance().add(new ShiftLowGear(this));
 		String fmsInput = DriverStation.getInstance().getGameSpecificMessage();
 		Position startPos = posChooser.getSelected();
 		double autoDelay = SmartDashboard.getNumber("Auto Delay", 0);
@@ -143,8 +171,8 @@ public class Robot extends TimedRobot {
 			strategies.put(key, chooser.getSelected());
 		}
 
-		Autonomous auto = new Autonomous(startPos, strategies, autoDelay, fmsInput, false, this);
-		auto.start();
+		Scheduler.getInstance().add(new Autonomous(startPos, strategies, autoDelay, fmsInput, false, this));
+		// auto.start();
 	}
 
 	/**
@@ -163,6 +191,7 @@ public class Robot extends TimedRobot {
 		// this line or comment it out.
 		if (autonomousCommand != null)
 			autonomousCommand.cancel();
+		dt.putVelocityControllersToDashboard();
 	}
 
 	/**
@@ -171,6 +200,27 @@ public class Robot extends TimedRobot {
 	@Override
 	public void teleopPeriodic() {
 		Scheduler.getInstance().run();
+
+		// SmartDashboard.putNumber("Drivetrain/Left VPID Targ",
+		// Robot.dt.getLeftVPIDSetpoint());
+		// SmartDashboard.putNumber("Drivetrain/Right VPID Targ",
+		// Robot.dt.getRightVPIDSetpoint());
+		// SmartDashboard.putNumber("Left VPID Error", Robot.dt.getLeftVPIDerror());
+		// SmartDashboard.putNumber("Right VPID Error", Robot.dt.getRightVPIDerror());
+		// SmartDashboard.putNumber("Left Enc Rate", Robot.dt.getLeftEncRate());
+		// SmartDashboard.putNumber("Right Enc Rate", Robot.dt.getRightEncRate());
+		//
+		// SmartDashboard.putNumber("Left Enc Dist", dt.getLeftDist());
+		// SmartDashboard.putNumber("Right Enc Dist", dt.getRightDist());
+		// SmartDashboard.putNumber("Avg Enc Dist", dt.getEncAvgDist());
+		//
+		SmartDashboard.putNumber("Angle", dt.getAHRSAngle());
+	}
+
+	boolean firstTime = true;
+
+	@Override
+	public void testInit() {
 	}
 
 	/**
@@ -178,5 +228,30 @@ public class Robot extends TimedRobot {
 	 */
 	@Override
 	public void testPeriodic() {
+		// if(firstTime) {
+		// Robot.dt.enableVelocityPIDs();
+		// firstTime = false;
+		//// }
+		// Robot.dt.setVPIDs(Robot.getConst("VPID Test Set", 0.5));
+
+		Scheduler.getInstance().run();
+
+		SmartDashboard.putNumber("Drivetrain/Left VPID Targ", dt.getLeftVPIDSetpoint());
+		SmartDashboard.putNumber("Drivetrain/Right VPID Targ", dt.getRightVPIDSetpoint());
+		SmartDashboard.putNumber("Left VPID Error", dt.getLeftVPIDerror());
+		SmartDashboard.putNumber("Right VPID Error", dt.getRightVPIDerror());
+		SmartDashboard.putNumber("Left Enc Rate", dt.getLeftEncRate());
+		SmartDashboard.putNumber("Right Enc Rate", dt.getRightEncRate());
+
+		SmartDashboard.putNumber("Left Enc Dist", dt.getLeftDist());
+		SmartDashboard.putNumber("Right Enc Dist", dt.getRightDist());
+		SmartDashboard.putNumber("Avg Enc Dist", dt.getEncAvgDist());
+
+		// dt.dtLeft.set(0.1);
+		// dt.dtRight.set(-oi.rightJoy.getY());
+		// dt.dtLeft.set(-oi.leftJoy.getY());
+		// dt.dtRight.set(-oi.rightJoy.getY());
+
+		dt.putVelocityControllersToDashboard();
 	}
 }

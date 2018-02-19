@@ -9,6 +9,8 @@ package org.usfirst.frc.team199.Robot2018;
 
 import org.usfirst.frc.team199.Robot2018.commands.PIDMove;
 import org.usfirst.frc.team199.Robot2018.commands.PIDTurn;
+import org.usfirst.frc.team199.Robot2018.commands.ResetEncoders;
+import org.usfirst.frc.team199.Robot2018.commands.RunLift;
 import org.usfirst.frc.team199.Robot2018.commands.SetDistancePerPulse;
 import org.usfirst.frc.team199.Robot2018.commands.ShiftDriveType;
 import org.usfirst.frc.team199.Robot2018.commands.ShiftHighGear;
@@ -31,14 +33,26 @@ public class OI {
 	private JoystickButton shiftDriveTypeButton;
 	private JoystickButton PIDMoveButton;
 	private JoystickButton PIDTurnButton;
+	private JoystickButton resetEncButton;
+	private JoystickButton MoveLiftUpButton;
+	private JoystickButton MoveLiftDownButton;
 	public Joystick rightJoy;
 	private JoystickButton updatePIDConstantsButton;
 	private JoystickButton updateEncoderDPPButton;
 	public Joystick manipulator;
+	private JoystickButton closeIntake;
+	private JoystickButton openIntake;
+	private JoystickButton raiseIntake;
+	private JoystickButton lowerIntake;
+	private JoystickButton intake;
+	private JoystickButton outake;
 
 	public int getButton(String key, int def) {
 		if (!SmartDashboard.containsKey("Button/" + key)) {
-			SmartDashboard.putNumber("Button/" + key, def);
+			if (!SmartDashboard.putNumber("Button/" + key, def)) {
+				System.err.println("SmartDashboard Key" + "Button/" + key + "already taken by a different type");
+				return def;
+			}
 		}
 		return (int) SmartDashboard.getNumber("Button/" + key, def);
 	}
@@ -52,23 +66,49 @@ public class OI {
 	 */
 	public OI(Robot robot) {
 		leftJoy = new Joystick(0);
-		shiftLowGearButton = new JoystickButton(leftJoy, getButton("Shift Low Gear", 3));
-		shiftLowGearButton.whenPressed(new ShiftLowGear(robot));
-		shiftHighGearButton = new JoystickButton(leftJoy, getButton("Shift High Gear", 5));
-		shiftHighGearButton.whenPressed(new ShiftHighGear(robot));
 		shiftDriveTypeButton = new JoystickButton(leftJoy, getButton("Shift Drive Type", 2));
 		shiftDriveTypeButton.whenPressed(new ShiftDriveType(robot));
 		PIDMoveButton = new JoystickButton(leftJoy, getButton("PID Move", 7));
-		PIDMoveButton.whenPressed(new PIDMove(40, robot.dt, robot.dt.distEncAvg, robot));
+		PIDMoveButton.whenPressed(
+				new PIDMove(robot.sd.getConst("Move Targ", 24), robot.dt, robot.sd, robot.rmap.distEncAvg, robot));
 		PIDTurnButton = new JoystickButton(leftJoy, getButton("PID Turn", 8));
-		PIDTurnButton.whenPressed(new PIDTurn(30, robot.dt, robot.dt.fancyGyro, robot));
+		// PIDTurnButton.whenPressed(new PIDTurn(Robot.getConst("Turn Targ", 90),
+		// Robot.dt, Robot.sd RobotMap.fancyGyro));
+		PIDTurnButton.whenReleased(
+				new PIDTurn(robot.getConst("Turn Targ", 90), robot.dt, robot.sd, robot.rmap.fancyGyro, robot));
+		resetEncButton = new JoystickButton(leftJoy, getButton("Reset Dist Enc", 10));
+		resetEncButton.whenPressed(new ResetEncoders(robot));
 
 		rightJoy = new Joystick(1);
+		shiftHighGearButton = new JoystickButton(rightJoy, getButton("Shift High Gear", 3));
+		shiftHighGearButton.whenPressed(new ShiftHighGear(robot));
+		shiftLowGearButton = new JoystickButton(rightJoy, getButton("Shift Low Gear", 2));
+		shiftLowGearButton.whenPressed(new ShiftLowGear(robot));
 		updatePIDConstantsButton = new JoystickButton(rightJoy, getButton("Get PID Constants", 8));
 		updatePIDConstantsButton.whenPressed(new UpdatePIDConstants(robot));
 		updateEncoderDPPButton = new JoystickButton(rightJoy, getButton("Get Encoder Dist Per Pulse", 9));
 		updateEncoderDPPButton.whenPressed(new SetDistancePerPulse(robot));
+		MoveLiftUpButton = new JoystickButton(rightJoy, getButton("Run Lift Motor Up", 10));
+		MoveLiftDownButton = new JoystickButton(rightJoy, getButton("Run Lift Motor Down", 11));
+		MoveLiftUpButton.whileHeld(new RunLift(robot.lift, true, robot));
+		MoveLiftDownButton.whileHeld(new RunLift(robot.lift, false, robot));
 
-		manipulator = new Joystick(2);
+		// manipulator = new Joystick(2);
+		// closeIntake = new JoystickButton(manipulator, getButton("Close Intake
+		// Button", 1));
+		// closeIntake.whenPressed(new CloseIntake());
+		// openIntake = new JoystickButton(manipulator, getButton("Open Intake Button",
+		// 2));
+		// openIntake.whenPressed(new OpenIntake());
+		// raiseIntake = new JoystickButton(manipulator, getButton("Raise Intake
+		// Button", 3));
+		// raiseIntake.whenPressed(new RaiseIntake());
+		// lowerIntake = new JoystickButton(manipulator, getButton("Lower Intake
+		// Button", 4));
+		// lowerIntake.whenPressed(new LowerIntake());
+		// intake = new JoystickButton(manipulator, getButton("Intake Button", 5));
+		// intake.whenPressed(new IntakeCube());
+		// outake = new JoystickButton(manipulator, getButton("Outake Button", 6));
+		// outake.whenPressed(new OutakeCube());
 	}
 }

@@ -1,9 +1,10 @@
 package org.usfirst.frc.team199.Robot2018.subsystems;
 
-import org.usfirst.frc.team199.Robot2018.RobotMap;
+import org.usfirst.frc.team199.Robot2018.Robot;
 
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
+import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.command.Subsystem;
 
 /**
@@ -12,8 +13,8 @@ import edu.wpi.first.wpilibj.command.Subsystem;
 public class Lift extends Subsystem implements LiftInterface {
 
 	private WPI_TalonSRX liftMotor;
-
-	private Position targetPosition = Position.GROUND;
+	private Encoder liftEnc;
+	private Position targetPosition;
 
 	/**
 	 * Constructs this subsystem and instantiates all of its components.
@@ -21,8 +22,11 @@ public class Lift extends Subsystem implements LiftInterface {
 	 * @param rMap
 	 *            the actual RobotMap object, created in Robot
 	 */
-	public Lift(RobotMap rmap) {
-		liftMotor = rmap.liftMotor;
+	public Lift(Robot robot) {
+		liftMotor = robot.rmap.liftMotor;
+		;
+		liftEnc = robot.rmap.liftEnc;
+		targetPosition = Position.GROUND;
 	}
 
 	/**
@@ -34,6 +38,7 @@ public class Lift extends Subsystem implements LiftInterface {
 		// setDefaultCommand(new MySpecialCommand());
 	}
 
+	@Override
 	public void setTargetPosition(Position newPosition) {
 		targetPosition = newPosition;
 	}
@@ -75,4 +80,32 @@ public class Lift extends Subsystem implements LiftInterface {
 
 	}
 
+	/**
+	 * Runs lift motor at specified speed
+	 * 
+	 * @param speed
+	 *            - desired speed to run at
+	 */
+	@Override
+	public void runMotor(double output) {
+		liftMotor.set(output);
+	}
+
+	/**
+	 * Returns the position the lift is currently at
+	 * 
+	 * @return pos - current position
+	 */
+	@Override
+	public Position getCurrPos() {
+		return targetPosition;
+	}
+
+	/**
+	 * Resets the encoder
+	 */
+	@Override
+	public void resetEnc() {
+		liftEnc.reset();
+	}
 }

@@ -8,36 +8,46 @@
 package org.usfirst.frc.team199.Robot2018.subsystems;
 
 import org.usfirst.frc.team199.Robot2018.Robot;
-import org.usfirst.frc.team199.Robot2018.RobotMap;
 import org.usfirst.frc.team199.Robot2018.autonomous.PIDSourceAverage;
 import org.usfirst.frc.team199.Robot2018.autonomous.VelocityPIDController;
 import org.usfirst.frc.team199.Robot2018.commands.TeleopDrive;
 
+import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
+import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import com.kauailabs.navx.frc.AHRS;
 
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.PIDSource;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.command.Subsystem;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Drivetrain extends Subsystem implements DrivetrainInterface {
 	// Put methods for controlling this subsystem
 	// here. Call these from Commands.
 
-	private Encoder leftEncDist;
-	private Encoder rightEncDist;
-	public PIDSourceAverage distEncAvg;
-	private SpeedControllerGroup dtLeft;
-	private SpeedControllerGroup dtRight;
-	private DifferentialDrive robotDrive;
-	private VelocityPIDController leftVelocityController;
-	private VelocityPIDController rightVelocityController;
+	private final WPI_TalonSRX dtLeftMaster;
+	private final WPI_VictorSPX dtLeftSlave;
+	private final WPI_TalonSRX dtRightMaster;
+	private final WPI_VictorSPX dtRightSlave;
+	private final Encoder leftEncDist;
+	private final Encoder rightEncDist;
+	private final Encoder leftEncRate;
+	private final Encoder rightEncRate;
+	private final PIDSourceAverage distEncAvg;
+	public final SpeedControllerGroup dtLeft;
+	public final SpeedControllerGroup dtRight;
+	private final DifferentialDrive robotDrive;
+	private final VelocityPIDController leftVelocityController;
+	private final VelocityPIDController rightVelocityController;
 
 	public AHRS fancyGyro;
 	private DoubleSolenoid dtGear;
 
-	private Robot robot;
+	private Robot rob;
 
 	/**
 	 * Constructs this subsystem and instantiates all of its components.
@@ -47,25 +57,121 @@ public class Drivetrain extends Subsystem implements DrivetrainInterface {
 	 * @param robot
 	 *            the actual Robot object, for non-static purposes
 	 */
-	public Drivetrain(RobotMap robotMap, Robot robot) {
-		leftEncDist = robotMap.leftEncDist;
-		rightEncDist = robotMap.rightEncDist;
-		distEncAvg = robotMap.distEncAvg;
-		dtLeft = robotMap.dtLeft;
-		dtRight = robotMap.dtRight;
-		robotDrive = robotMap.robotDrive;
-		leftVelocityController = robotMap.leftVelocityController;
-		rightVelocityController = robotMap.rightVelocityController;
-
-		fancyGyro = robotMap.fancyGyro;
-		dtGear = robotMap.dtGear;
-
-		this.robot = robot;
+	public Drivetrain(Robot robot) {
+		rob = robot;
+		dtLeftMaster = rob.rmap.dtLeftMaster;
+		dtLeftSlave = rob.rmap.dtLeftSlave;
+		dtRightMaster = rob.rmap.dtRightMaster;
+		dtRightSlave = rob.rmap.dtRightSlave;
+		leftEncDist = rob.rmap.leftEncDist;
+		rightEncDist = rob.rmap.rightEncDist;
+		leftEncRate = rob.rmap.leftEncRate;
+		rightEncRate = rob.rmap.rightEncRate;
+		distEncAvg = rob.rmap.distEncAvg;
+		dtLeft = rob.rmap.dtLeft;
+		dtRight = rob.rmap.dtRight;
+		robotDrive = rob.rmap.robotDrive;
+		leftVelocityController = rob.rmap.leftVelocityController;
+		rightVelocityController = rob.rmap.rightVelocityController;
 	}
 
 	@Override
 	public void initDefaultCommand() {
-		setDefaultCommand(new TeleopDrive(robot));
+		setDefaultCommand(new TeleopDrive(rob));
+	}
+
+	public PIDSourceAverage getDistEncAvg() {
+		return distEncAvg;
+	}
+
+	public double getEncAvgDist() {
+		return distEncAvg.pidGet();
+	}
+
+	public double getLeftDist() {
+		return leftEncDist.getDistance();
+	}
+
+	public double getRightDist() {
+		return rightEncDist.getDistance();
+	}
+
+	public void setLeft(double spd) {
+		dtLeft.set(spd);
+	}
+
+	public void setRight(double spd) {
+		dtRight.set(spd);
+	}
+
+	/**
+	 * Use for testing only (i.e. when not going through robotDrive)
+	 */
+	public void setVPIDs(double realSpd) {
+		leftVelocityController.set(realSpd);
+		rightVelocityController.set(-realSpd);
+	}
+
+	public double getLeftVPIDerror() {
+		return leftVelocityController.getError();
+	}
+
+	public double getRightVPIDerror() {
+		return rightVelocityController.getError();
+	}
+
+	public double getLeftVPIDSetpoint() {
+		return leftVelocityController.get();
+	}
+
+	public double getRightVPIDSetpoint() {
+		return rightVelocityController.get();
+	}
+
+	/**
+	 * Returns the getRate() of the left encoder
+	 * 
+	 * @return the rate of the left encoder
+	 */
+	@Override
+	public double getLeftEncRate() {
+		return leftEncRate.getRate();
+	}
+
+	/**
+	 * Returns the getRate() of the right encoder
+	 * 
+	 * @return the rate of the right encoder
+	 */
+	@Override
+	public double getRightEncRate() {
+		return rightEncRate.getRate();
+	}
+
+	/**
+	 * Sets the left side of the drivetrain to use the talons' pids to run at the
+	 * specified speed.
+	 * 
+	 * @param value
+	 *            The speed to run at
+	 */
+	public void dtLeftPIDDrive(double value) {
+		double setValue = value * rob.getConst("Units per 100ms", 3413);
+		dtLeftMaster.set(ControlMode.Velocity, setValue);
+		dtLeftSlave.set(ControlMode.Velocity, setValue);
+	}
+
+	/**
+	 * Sets the right side of the drivetrain to use the talons' pids to run at the
+	 * specified speed.
+	 * 
+	 * @param value
+	 *            The speed to run at
+	 */
+	public void dtRightPIDDrive(double value) {
+		double setValue = value * rob.getConst("Units per 100ms", 3413);
+		dtRightMaster.set(ControlMode.Velocity, setValue);
+		dtRightSlave.set(ControlMode.Velocity, setValue);
 	}
 
 	/**
@@ -73,15 +179,23 @@ public class Drivetrain extends Subsystem implements DrivetrainInterface {
 	 */
 	@Override
 	public void teleopDrive() {
-		if (robot.getBool("Arcade Drive", true)) {
-			if (robot.getBool("Arcade Drive Default Setup", true)) {
-				arcadeDrive(robot.oi.leftJoy.getY(), robot.oi.rightJoy.getX());
+		if (rob.getBool("Arcade Drive", true)) {
+			if (rob.getBool("Arcade Drive Default Setup", true)) {
+				arcadeDrive(-rob.oi.leftJoy.getY(), rob.oi.rightJoy.getX());
 			} else {
-				arcadeDrive(robot.oi.rightJoy.getY(), robot.oi.leftJoy.getX());
+				arcadeDrive(-rob.oi.rightJoy.getY(), rob.oi.leftJoy.getX());
 			}
 		} else {
-			tankDrive(robot.oi.leftJoy.getY(), robot.oi.rightJoy.getY());
+			tankDrive(-rob.oi.leftJoy.getY(), -rob.oi.rightJoy.getY());
 		}
+		SmartDashboard.putNumber("Drivetrain/Left VPID Targ", leftVelocityController.getSetpoint());
+		SmartDashboard.putNumber("Drivetrain/Right VPID Targ", rightVelocityController.getSetpoint());
+		SmartDashboard.putNumber("Drivetrain/Current Max Speed", getCurrentMaxSpeed());
+		SmartDashboard.putNumber("Drivetrain/Left Enc Dist", leftEncDist.getDistance());
+		SmartDashboard.putNumber("Drivetrain/Left Enc Rate", leftEncRate.getRate());
+		SmartDashboard.putNumber("Drivetrain/Right Enc Dist", rightEncDist.getDistance());
+		SmartDashboard.putNumber("Drivetrain/Right Enc Rate", rightEncRate.getRate());
+		SmartDashboard.putNumber("Drivetrain/Enc Avg Dist", distEncAvg.pidGet());
 	}
 
 	/**
@@ -94,7 +208,7 @@ public class Drivetrain extends Subsystem implements DrivetrainInterface {
 	 */
 	@Override
 	public void arcadeDrive(double speed, double turn) {
-		robotDrive.arcadeDrive(speed, turn, robot.getBool("Square Drive Values", false));
+		robotDrive.arcadeDrive(speed, turn, rob.getBool("Square Drive Values", false));
 	}
 
 	/**
@@ -107,7 +221,7 @@ public class Drivetrain extends Subsystem implements DrivetrainInterface {
 	 */
 	@Override
 	public void tankDrive(double leftSpeed, double rightSpeed) {
-		robotDrive.tankDrive(leftSpeed, rightSpeed, robot.getBool("Square Drive Values", false));
+		robotDrive.tankDrive(leftSpeed, rightSpeed, rob.getBool("Square Drive Values", false));
 	}
 
 	/**
@@ -137,10 +251,8 @@ public class Drivetrain extends Subsystem implements DrivetrainInterface {
 	 */
 	@Override
 	public void updatePidConstants() {
-		leftVelocityController.setPID(robot.getConst("VelocityLeftkP", 1), robot.getConst("VelocityLeftkI", 0),
-				robot.getConst("VelocityLeftkD", 0));
-		rightVelocityController.setPID(robot.getConst("VelocityRightkP", 1), robot.getConst("VelocityRightkI", 0),
-				robot.getConst("VelocityRightkD", 0));
+		leftVelocityController.setPID(rob.getConst("VelocityLeftkI", 0), 0, calcDefkD(getCurrentMaxSpeed()));
+		rightVelocityController.setPID(rob.getConst("VelocityRightkI", 0), 0, calcDefkD(getCurrentMaxSpeed()));
 		resetVelocityPIDkFConsts();
 	}
 
@@ -172,6 +284,11 @@ public class Drivetrain extends Subsystem implements DrivetrainInterface {
 		fancyGyro.reset();
 	}
 
+	@Override
+	public double getGyroRate() {
+		return fancyGyro.getRate();
+	}
+
 	/**
 	 * Used to get the yaw angle (Z-axis in degrees) that the ahrs currently reads
 	 * 
@@ -179,7 +296,7 @@ public class Drivetrain extends Subsystem implements DrivetrainInterface {
 	 */
 	@Override
 	public double getAHRSAngle() {
-		return fancyGyro.getAngle();
+		return fancyGyro.getYaw();
 	}
 
 	/**
@@ -201,6 +318,7 @@ public class Drivetrain extends Subsystem implements DrivetrainInterface {
 	@Override
 	public void setDistancePerPulseLeft(double ratio) {
 		leftEncDist.setDistancePerPulse(ratio);
+		leftEncRate.setDistancePerPulse(ratio);
 	}
 
 	/**
@@ -213,6 +331,7 @@ public class Drivetrain extends Subsystem implements DrivetrainInterface {
 	@Override
 	public void setDistancePerPulseRight(double ratio) {
 		rightEncDist.setDistancePerPulse(ratio);
+		rightEncRate.setDistancePerPulse(ratio);
 	}
 
 	/**
@@ -239,14 +358,18 @@ public class Drivetrain extends Subsystem implements DrivetrainInterface {
 	 * Activates the solenoid to push the drivetrain into high or low gear.
 	 * 
 	 * @param highGear
-	 *            If the solenoid is to be pushed into high gear (true, kForward) or
+	 *            <<<<<<< HEAD If the solenoid is to be pushed into high gear (true,
+	 *            kForward) or ======= If the solenoid is to be pushed into high
+	 *            gear (true, kReverse) or low gear (false, kForward) >>>>>>> branch
+	 *            'master' of
+	 *            https://github.com/DriverStationComputer/RobotCode2018.git
 	 */
 	@Override
 	public void shiftGears(boolean highGear) {
-		if (highGear ^ robot.getBool("Drivetrain Gear Shift Low", false)) {
-			dtGear.set(DoubleSolenoid.Value.kForward);
-		} else {
+		if (highGear ^ rob.getBool("Drivetrain Gear Shift Low", false)) {
 			dtGear.set(DoubleSolenoid.Value.kReverse);
+		} else {
+			dtGear.set(DoubleSolenoid.Value.kForward);
 		}
 	}
 
@@ -256,6 +379,14 @@ public class Drivetrain extends Subsystem implements DrivetrainInterface {
 	@Override
 	public void shiftGearSolenoidOff() {
 		dtGear.set(DoubleSolenoid.Value.kOff);
+	}
+
+	/**
+	 * @return the gyroscope
+	 */
+	@Override
+	public PIDSource getGyro() {
+		return fancyGyro;
 	}
 
 	/**
@@ -272,7 +403,15 @@ public class Drivetrain extends Subsystem implements DrivetrainInterface {
 		double newKF = 1 / getCurrentMaxSpeed();
 		leftVelocityController.setF(newKF);
 		rightVelocityController.setF(newKF);
+		SmartDashboard.putNumber("VPID kF", newKF);
 		return newKF;
+	}
+
+	public double resetVPIDInputRanges() {
+		double currentMaxSpd = getCurrentMaxSpeed();
+		leftVelocityController.setInputRange(-currentMaxSpd, currentMaxSpd);
+		rightVelocityController.setInputRange(-currentMaxSpd, currentMaxSpd);
+		return currentMaxSpd;
 	}
 
 	/**
@@ -282,10 +421,51 @@ public class Drivetrain extends Subsystem implements DrivetrainInterface {
 	 */
 	@Override
 	public double getCurrentMaxSpeed() {
-		if (robot.getBool("High Gear", true)) {
-			return robot.getConst("Max High Speed", 204);
+		if (rob.getBool("High Gear", true)) {
+			return rob.getConst("Max High Speed", 204);
 		} else {
-			return robot.getConst("Max Low Speed", 84);
+			return rob.getConst("Max Low Speed", 84);
 		}
+	}
+
+	/**
+	 * Put left and right velocity controllers (PID) on SmartDashboard.
+	 */
+	@Override
+	public void putVelocityControllersToDashboard() {
+		SmartDashboard.putData("Left PID Controller", leftVelocityController);
+		SmartDashboard.putData("Right PID Controller", rightVelocityController);
+	}
+
+	/**
+	 * Uses SmartDashboard and math to calculate a *great* default kD
+	 */
+	public double calcDefkD(double maxSpeed) {
+		/*
+		 * timeConstant is proportional to max speed of the shaft (which is the max
+		 * speed of the cim divided by the gear reduction), half the mass (because the
+		 * half of the drivetrain only has to support half of the robot), and radius of
+		 * the drivetrain wheels squared. It's inversely proportional to the stall
+		 * torque of the shaft, which is found by multiplying the stall torque of the
+		 * motor with the gear reduction by the amount of motors.
+		 */
+		double gearReduction = rob.getBool("High Gear", false) ? rob.getConst("High Gear Gear Reduction", 5.392)
+				: rob.getConst("Low Gear Gear Reduction", 12.255);
+		double radius = rob.getConst("Radius of Drivetrain Wheel", 0.0635);
+		double timeConstant = rob.getConst("Omega Max", 5330) / gearReduction / 60 * 2 * Math.PI
+				* convertNtokG(rob.getConst("Weight of Robot", 342)) / 2 * radius * radius
+				/ (rob.getConst("Stall Torque", 2.41) * gearReduction * 2);
+		double cycleTime = rob.getConst("Code cycle time", 0.05);
+		/*
+		 * The denominator of kD is 1-(e ^ -cycleTime / timeConstant). The numerator is
+		 * one.
+		 */
+		double denominator = Math.pow(Math.E, 1 * cycleTime / timeConstant) - 1;
+		return 1 / denominator / maxSpeed;
+	}
+
+	private double convertNtokG(double newtons) {
+		// weight / accel due to grav = kg
+		return newtons / 9.81;
 	}
 }

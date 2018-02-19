@@ -7,13 +7,14 @@ import edu.wpi.first.wpilibj.command.Command;
 /**
  *
  */
-public class IntakeCube extends Command {
+public class DefaultIntake extends Command {
 
 	private Robot rob;
 
-	public IntakeCube(Robot robot) {
+	public DefaultIntake(Robot robot) {
 		// Use requires() here to declare subsystem dependencies
 		// eg. requires(chassis);
+		requires(robot.intakeEject);
 		rob = robot;
 	}
 
@@ -25,23 +26,27 @@ public class IntakeCube extends Command {
 	// Called repeatedly when this Command is scheduled to run
 	@Override
 	protected void execute() {
-		rob.intakeEject.runIntake(-1);
+		// 1 and 5 represent the axes' index in driver station
+		rob.intakeEject.runLeftIntake(rob.oi.manipulator.getRawAxis(1));
+		rob.intakeEject.runRightIntake(rob.oi.manipulator.getRawAxis(5));
 	}
 
 	// Make this return true when this Command no longer needs to run execute()
 	@Override
 	protected boolean isFinished() {
-		return rob.intakeEject.hasCube();
+		return false;
 	}
 
 	// Called once after isFinished returns true
 	@Override
 	protected void end() {
+		rob.intakeEject.runIntake(0);
 	}
 
 	// Called when another command which requires one or more of the same
 	// subsystems is scheduled to run
 	@Override
 	protected void interrupted() {
+		end();
 	}
 }
