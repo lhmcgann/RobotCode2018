@@ -8,6 +8,7 @@
 package org.usfirst.frc.team199.Robot2018;
 
 import org.usfirst.frc.team199.Robot2018.autonomous.PIDSourceAverage;
+import org.usfirst.frc.team199.Robot2018.autonomous.TalonVelocityController;
 import org.usfirst.frc.team199.Robot2018.autonomous.VelocityPIDController;
 
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
@@ -44,6 +45,7 @@ public class RobotMap {
 	public WPI_VictorSPX dtLeftSlave;
 	public SpeedControllerGroup dtLeft;
 	public VelocityPIDController leftVelocityController;
+	public TalonVelocityController leftTalVelController;
 
 	public DigitalSource rightEncPort1;
 	public DigitalSource rightEncPort2;
@@ -53,6 +55,7 @@ public class RobotMap {
 	public WPI_VictorSPX dtRightSlave;
 	public SpeedControllerGroup dtRight;
 	public VelocityPIDController rightVelocityController;
+	public TalonVelocityController rightTalVelController;
 
 	public DifferentialDrive robotDrive;
 	public PIDSourceAverage distEncAvg;
@@ -131,16 +134,6 @@ public class RobotMap {
 		configSPX(dtLeftSlave);
 		dtLeft = new SpeedControllerGroup(dtLeftMaster, dtLeftSlave);
 
-		leftVelocityController = new VelocityPIDController(robot.getConst("VelocityLeftkP", 1),
-				robot.getConst("VelocityLeftkI", 0), robot.getConst("VelocityLeftkD", 0),
-				1 / robot.getConst("Max Low Speed", 84), leftEncRate, dtLeft);
-		leftVelocityController.enable();
-		leftVelocityController.setInputRange(-robot.getConst("Max High Speed", 204),
-				robot.getConst("Max High Speed", 204));
-		leftVelocityController.setOutputRange(-1.0, 1.0);
-		leftVelocityController.setContinuous(false);
-		leftVelocityController.setAbsoluteTolerance(robot.getConst("VelocityToleranceLeft", 2));
-
 		rightEncPort1 = new DigitalInput(getPort("1RightEnc", 2));
 		rightEncPort2 = new DigitalInput(getPort("2RightEnc", 3));
 		rightEncDist = new Encoder(leftEncPort1, leftEncPort2);
@@ -153,17 +146,38 @@ public class RobotMap {
 		configSPX(dtRightSlave);
 		dtRight = new SpeedControllerGroup(dtRightMaster, dtRightSlave);
 
-		rightVelocityController = new VelocityPIDController(robot.getConst("VelocityRightkP", 1),
-				robot.getConst("VelocityRightkI", 0), robot.getConst("VelocityRightkD", 0),
-				1 / robot.getConst("Max Low Speed", 84), rightEncRate, dtRight);
-		rightVelocityController.enable();
-		rightVelocityController.setInputRange(-robot.getConst("Max High Speed", 204),
-				robot.getConst("Max High Speed", 204));
-		rightVelocityController.setOutputRange(-1.0, 1.0);
-		rightVelocityController.setContinuous(false);
-		rightVelocityController.setAbsoluteTolerance(robot.getConst("VelocityToleranceRight", 2));
+		if (!robot.getBool("Talon PID", false)) {
+			leftVelocityController = new VelocityPIDController(robot.getConst("VelocityLeftkI", 0),
+					/* robot.getConst("VelocityLeftkD", 0) */ 0, robot.getConst("VelocityLeftkP", 0),
+					1 / robot.getConst("Max Low Speed", 84), leftEncRate, dtLeft);
+			leftVelocityController.setInputRange(-robot.getConst("Max High Speed", 204),
+					robot.getConst("Max High Speed", 204));
+			leftVelocityController.setOutputRange(-1.0, 1.0);
+			leftVelocityController.setContinuous(false);
+			leftVelocityController.setAbsoluteTolerance(robot.getConst("VelocityToleranceLeft", 2));
 
-		robotDrive = new DifferentialDrive(leftVelocityController, rightVelocityController);
+			rightVelocityController = new VelocityPIDController(robot.getConst("VelocityRightkI", 0),
+					/* robot.getConst("VelocityRightkD", 0) */ 0, robot.getConst("VelocityRightkP", 0),
+					1 / robot.getConst("Max Low Speed", 84), rightEncRate, dtRight);
+			rightVelocityController.setInputRange(-robot.getConst("Max High Speed", 204),
+					robot.getConst("Max High Speed", 204));
+			rightVelocityController.setOutputRange(-1.0, 1.0);
+			rightVelocityController.setContinuous(false);
+			rightVelocityController.setAbsoluteTolerance(robot.getConst("VelocityToleranceRight", 2));
+
+			robotDrive = new DifferentialDrive(leftVelocityController, rightVelocityController);
+		} else {
+			leftTalVelController = new TalonVelocityController(robot.getConst("VelocityLeftkP", 0),
+					robot.getConst("VelocityLeftkI", 0), robot.getConst("VelocityLeftkD", 0),
+					1 / robot.getConst("Max Low Speed", 84), leftEncRate, dtLeftMaster, 0, 0);
+
+			rightTalVelController = new TalonVelocityController(robot.getConst("VelocityRightkP", 0),
+					robot.getConst("VelocityRightkI", 0), robot.getConst("VelocityRightkD", 0),
+					1 / robot.getConst("Max Low Speed", 84), rightEncRate, dtRightMaster, 0, 0);
+
+			robotDrive = new DifferentialDrive(leftTalVelController, rightTalVelController);
+		}
+
 		robotDrive.setMaxOutput(robot.getConst("Max High Speed", 204));
 
 		distEncAvg = new PIDSourceAverage(leftEncDist, rightEncDist);
