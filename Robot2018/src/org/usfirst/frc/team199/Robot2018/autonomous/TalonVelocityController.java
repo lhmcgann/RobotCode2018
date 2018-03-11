@@ -12,6 +12,8 @@ import edu.wpi.first.wpilibj.SpeedController;
 public class TalonVelocityController implements SpeedController {
 
 	private WPI_TalonSRX talon;
+	private int slotID;
+	private int timeout;
 
 	/**
 	 * Constructs a TalonVelocityContoller. Sets the four PID constants and the
@@ -30,7 +32,8 @@ public class TalonVelocityController implements SpeedController {
 	 * @param output
 	 *            the Talon SRX you are telling what to do
 	 * @param slotIdx
-	 *            Parameter slot for the constant.
+	 *            Parameter slot for the constant. (Which set of PID constants this
+	 *            is, because talons can store more than one.)
 	 * @param timeoutMs
 	 *            Timeout value in ms. If nonzero, function will wait for config
 	 *            success and report an error if it times out. If zero, no blocking
@@ -39,6 +42,8 @@ public class TalonVelocityController implements SpeedController {
 	public TalonVelocityController(double kp, double ki, double kd, double kf, PIDSource source, WPI_TalonSRX output,
 			int slotIdx, int timeoutMs) {
 		talon = output;
+		slotID = slotIdx;
+		timeout = timeoutMs;
 		talon.config_kP(slotIdx, kp, timeoutMs);
 		talon.config_kI(slotIdx, ki, timeoutMs);
 		talon.config_kD(slotIdx, kd, timeoutMs);
@@ -93,7 +98,7 @@ public class TalonVelocityController implements SpeedController {
 	 *            the value to set kP to
 	 */
 	public void setP(double value) {
-		talon.config_kP(0, value, 0);
+		talon.config_kP(slotID, value, timeout);
 	}
 
 	/**
@@ -103,7 +108,7 @@ public class TalonVelocityController implements SpeedController {
 	 *            the value to set kI to
 	 */
 	public void setI(double value) {
-		talon.config_kI(0, value, 0);
+		talon.config_kI(slotID, value, timeout);
 	}
 
 	/**
@@ -113,7 +118,7 @@ public class TalonVelocityController implements SpeedController {
 	 *            the value to set kD to
 	 */
 	public void setD(double value) {
-		talon.config_kD(0, value, 0);
+		talon.config_kD(slotID, value, timeout);
 	}
 
 	/**
@@ -123,7 +128,7 @@ public class TalonVelocityController implements SpeedController {
 	 *            the value to set kF to
 	 */
 	public void setF(double value) {
-		talon.config_kF(0, value, 0);
+		talon.config_kF(slotID, value, timeout);
 	}
 
 	/**

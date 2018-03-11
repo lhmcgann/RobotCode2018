@@ -8,6 +8,8 @@
 package org.usfirst.frc.team199.Robot2018;
 
 import org.usfirst.frc.team199.Robot2018.autonomous.PIDSourceAverage;
+import org.usfirst.frc.team199.Robot2018.autonomous.TalonVelocityController;
+import org.usfirst.frc.team199.Robot2018.autonomous.VelocityPIDController;
 
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
@@ -23,6 +25,7 @@ import edu.wpi.first.wpilibj.PowerDistributionPanel;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.VictorSP;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
@@ -54,6 +57,8 @@ public class RobotMap {
 	public static WPI_TalonSRX dtLeftMaster;
 	public static WPI_VictorSPX dtLeftSlave;
 	public static SpeedControllerGroup dtLeft;
+	public static VelocityPIDController leftVelocityController;
+	public static TalonVelocityController leftTalVelController;
 
 	public static DigitalSource rightEncPort1;
 	public static DigitalSource rightEncPort2;
@@ -62,6 +67,10 @@ public class RobotMap {
 	public static WPI_TalonSRX dtRightMaster;
 	public static WPI_VictorSPX dtRightSlave;
 	public static SpeedControllerGroup dtRight;
+	public static VelocityPIDController rightVelocityController;
+	public static TalonVelocityController rightTalVelController;
+
+	public static DifferentialDrive robotDrive;
 
 	public static PIDSourceAverage distEncAvg;
 
@@ -172,11 +181,73 @@ public class RobotMap {
 		// inverted bc gear boxes invert from input to output
 		dtRight.setInverted(true);
 
+		if (!Robot.getBool("Talon PID", false)) {
+			leftVelocityController = new VelocityPIDController(Robot.getConst("VelocityLeftkI", 0),
+					/* Robot.getConst("VelocityLeftkD", 0) */ 0, Robot.getConst("VelocityLeftkP", 0),
+					1 / Robot.getConst("Max Low Speed", 84), leftEncRate, dtLeft);
+			leftVelocityController.setInputRange(-Robot.getConst("Max High Speed", 204),
+					Robot.getConst("Max High Speed", 204));
+			leftVelocityController.setOutputRange(-1.0, 1.0);
+			leftVelocityController.setContinuous(false);
+			leftVelocityController.setAbsoluteTolerance(Robot.getConst("VelocityToleranceLeft", 2));
+
+			rightVelocityController = new VelocityPIDController(Robot.getConst("VelocityRightkI", 0),
+					/* Robot.getConst("VelocityRightkD", 0) */ 0, Robot.getConst("VelocityRightkP", 0),
+					1 / Robot.getConst("Max Low Speed", 84), rightEncRate, dtRight);
+			rightVelocityController.setInputRange(-Robot.getConst("Max High Speed", 204),
+					Robot.getConst("Max High Speed", 204));
+			rightVelocityController.setOutputRange(-1.0, 1.0);
+			rightVelocityController.setContinuous(false);
+			rightVelocityController.setAbsoluteTolerance(Robot.getConst("VelocityToleranceRight", 2));
+
+			robotDrive = new DifferentialDrive(leftVelocityController, rightVelocityController);
+		} else {
+			leftTalVelController = new TalonVelocityController(Robot.getConst("VelocityLeftkP", 0),
+					Robot.getConst("VelocityLeftkI", 0), Robot.getConst("VelocityLeftkD", 0),
+					1 / Robot.getConst("Max Low Speed", 84), leftEncRate, dtLeftMaster, 0, 0);
+
+			rightTalVelController = new TalonVelocityController(Robot.getConst("VelocityRightkP", 0),
+					Robot.getConst("VelocityRightkI", 0), Robot.getConst("VelocityRightkD", 0),
+					1 / Robot.getConst("Max Low Speed", 84), rightEncRate, dtRightMaster, 0, 0);
+
+			robotDrive = new DifferentialDrive(leftTalVelController, rightTalVelController);
+		}
+
+		robotDrive.setMaxOutput(Robot.getConst("Max High Speed", 204));
+
 		distEncAvg = new PIDSourceAverage(leftEncDist, rightEncDist);
 		fancyGyro = new AHRS(SPI.Port.kMXP);
 		dtGear = new DoubleSolenoid(getPort("1dtGearSolenoid", 0), getPort("2dtGearSolenoid", 1));
 
 		calcDefkD(Robot.getConst("Max Low Speed", 84));
+
+		// leftVelocityController = new
+		// VelocityPIDController(Robot.getConst("VelocityLeftkP", 1),
+		// Robot.getConst("VelocityLeftkI", 0), Robot.getConst("VelocityLeftkD", 0),
+		// 1 / Robot.getConst("Max Low Speed", 84), leftEncRate, dtLeft);
+		// leftVelocityController.enable();
+		// leftVelocityController.setInputRange(-Robot.getConst("Max High Speed", 204),
+		// Robot.getConst("Max High Speed", 204));
+		// leftVelocityController.setOutputRange(-1.0, 1.0);
+		// leftVelocityController.setContinuous(false);
+		// leftVelocityController.setAbsoluteTolerance(Robot.getConst("VelocityToleranceLeft",
+		// 2));
+
+		// rightVelocityController = new
+		// VelocityPIDController(Robot.getConst("VelocityRightkP", 1),
+		// Robot.getConst("VelocityRightkI", 0), Robot.getConst("VelocityRightkD", 0),
+		// 1 / Robot.getConst("Max Low Speed", 84), rightEncRate, dtRight);
+		// rightVelocityController.enable();
+		// rightVelocityController.setInputRange(-Robot.getConst("Max High Speed", 204),
+		// Robot.getConst("Max High Speed", 204));
+		// rightVelocityController.setOutputRange(-1.0, 1.0);
+		// rightVelocityController.setContinuous(false);
+		// rightVelocityController.setAbsoluteTolerance(Robot.getConst("VelocityToleranceRight",
+		// 2));
+		//
+		// robotDrive = new DifferentialDrive(leftVelocityController,
+		// rightVelocityController);
+		// robotDrive.setMaxOutput(Robot.getConst("Max High Speed", 204));
 	}
 
 	/**
