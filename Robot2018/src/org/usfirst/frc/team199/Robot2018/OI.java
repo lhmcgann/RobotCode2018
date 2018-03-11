@@ -20,8 +20,6 @@ import org.usfirst.frc.team199.Robot2018.commands.SetDistancePerPulse;
 import org.usfirst.frc.team199.Robot2018.commands.ShiftDriveType;
 import org.usfirst.frc.team199.Robot2018.commands.ShiftHighGear;
 import org.usfirst.frc.team199.Robot2018.commands.ShiftLowGear;
-import org.usfirst.frc.team199.Robot2018.commands.ToggleLeftIntake;
-import org.usfirst.frc.team199.Robot2018.commands.ToggleRightIntake;
 import org.usfirst.frc.team199.Robot2018.commands.UpdatePIDConstants;
 
 import edu.wpi.first.wpilibj.Joystick;
@@ -119,11 +117,6 @@ public class OI {
 			intakeCubeButton.whenPressed(new IntakeCube(Robot.intakeEject));
 			outakeCubeButton = new JoystickButton(manipulator, getButton("Outake Button", 6));
 			outakeCubeButton.whenPressed(new EjectCube(Robot.intakeEject));
-
-			toggleLeftIntakeButton = new JoystickButton(manipulator, getButton("Toggle Left Intake Button", 3));
-			toggleLeftIntakeButton.whenPressed(new ToggleLeftIntake(Robot.intakeEject));
-			toggleRightIntakeButton = new JoystickButton(manipulator, getButton("Toggle Right Intake Button", 4));
-			toggleRightIntakeButton.whenPressed(new ToggleRightIntake(Robot.intakeEject));
 		}
 
 	}

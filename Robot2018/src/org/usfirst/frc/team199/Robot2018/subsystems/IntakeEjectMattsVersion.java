@@ -13,14 +13,12 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 /**
  * kForward = intake closed, kReverse = intake open
  */
-public class IntakeEjectBagged extends Subsystem implements IntakeEjectInterface {
+public class IntakeEjectMattsVersion extends Subsystem implements IntakeEjectInterface {
 	private final PowerDistributionPanel pdp = RobotMap.pdp;
 	private final VictorSP leftIntakeMotor = RobotMap.leftIntakeMotor;
 	private final VictorSP rightIntakeMotor = RobotMap.rightIntakeMotor;
-	private final DoubleSolenoid leftSolenoid = RobotMap.leftIntakeSolenoid;
-	private final DoubleSolenoid rightSolenoid = RobotMap.rightIntakeSolenoid;
-	private boolean leftOpen = isOpen(leftSolenoid.get());
-	private boolean rightOpen = isOpen(rightSolenoid.get());
+	private final DoubleSolenoid intakeSolenoid = RobotMap.intakeSolenoid;
+	private boolean open = isOpen(intakeSolenoid.get());
 
 	/**
 	 * Return whether or not a side of the intake (L/R) is open
@@ -128,62 +126,26 @@ public class IntakeEjectBagged extends Subsystem implements IntakeEjectInterface
 	}
 
 	/**
-	 * Toggles the left intake between open (kReverse) and closed (kForward).
-	 */
-	@Override
-	public void toggleLeftIntake() {
-		if (leftOpen) {
-			// set to closed
-			leftSolenoid.set(DoubleSolenoid.Value.kForward);
-		} else {
-			// set to open
-			leftSolenoid.set(DoubleSolenoid.Value.kReverse);
-		}
-		leftOpen = !leftOpen;
-		SmartDashboard.putBoolean("Left Solenoid Open", leftOpen);
-	}
-
-	/**
-	 * Toggles the right intake between open (kReverse) and closed (kForward).
-	 */
-	@Override
-	public void toggleRightIntake() {
-		if (rightOpen) {
-			// set to closed
-			rightSolenoid.set(DoubleSolenoid.Value.kForward);
-		} else {
-			// set to open
-			rightSolenoid.set(DoubleSolenoid.Value.kReverse);
-		}
-		rightOpen = !rightOpen;
-		SmartDashboard.putBoolean("Right Solenoid Open", rightOpen);
-	}
-
-	/**
-	 * Closes the intake
+	 * Closes the intake (kForward)
 	 */
 	@Override
 	public void closeIntake() {
-		if (leftOpen) {
-			toggleLeftIntake();
+		if (open) {
+			intakeSolenoid.set(DoubleSolenoid.Value.kForward);
 		}
-		if (rightOpen) {
-			toggleRightIntake();
-		}
+		open = !open;
 		SmartDashboard.putBoolean("Intake Open", false);
 	}
 
 	/**
-	 * Opens the intake
+	 * Opens the intake (kReverse)
 	 */
 	@Override
 	public void openIntake() {
-		if (!leftOpen) {
-			toggleLeftIntake();
+		if (!open) {
+			intakeSolenoid.set(DoubleSolenoid.Value.kReverse);
 		}
-		if (!rightOpen) {
-			toggleRightIntake();
-		}
+		open = !open;
 		SmartDashboard.putBoolean("Intake Open", true);
 	}
 }

@@ -20,7 +20,7 @@ import org.usfirst.frc.team199.Robot2018.commands.ShiftLowGear;
 import org.usfirst.frc.team199.Robot2018.subsystems.Climber;
 import org.usfirst.frc.team199.Robot2018.subsystems.ClimberAssist;
 import org.usfirst.frc.team199.Robot2018.subsystems.Drivetrain;
-import org.usfirst.frc.team199.Robot2018.subsystems.IntakeEjectBagged;
+import org.usfirst.frc.team199.Robot2018.subsystems.IntakeEjectMattsVersion;
 import org.usfirst.frc.team199.Robot2018.subsystems.Lift;
 
 import edu.wpi.first.wpilibj.DriverStation;
@@ -43,7 +43,7 @@ public class Robot extends IterativeRobot {
 
 	public static Climber climber;
 	public static ClimberAssist climberAssist;
-	public static IntakeEjectBagged intakeEject;
+	public static IntakeEjectMattsVersion intakeEject;
 	public static Lift lift;
 	public static RobotMap rmap;
 	public static Drivetrain dt;
@@ -134,7 +134,7 @@ public class Robot extends IterativeRobot {
 		rmap = new RobotMap();
 		climber = new Climber();
 		climberAssist = new ClimberAssist();
-		intakeEject = new IntakeEjectBagged();
+		intakeEject = new IntakeEjectMattsVersion();
 		lift = new Lift();
 		dt = new Drivetrain(sd);
 		oi = new OI(this);

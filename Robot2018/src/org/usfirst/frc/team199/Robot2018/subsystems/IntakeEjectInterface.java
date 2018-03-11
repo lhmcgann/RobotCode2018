@@ -56,22 +56,12 @@ public interface IntakeEjectInterface {
 	public void runIntake(boolean intaking);
 
 	/**
-	 * Toggles the left intake between open and closed
-	 */
-	public void toggleLeftIntake();
-
-	/**
-	 * Toggles the right intake between open and closed
-	 */
-	public void toggleRightIntake();
-
-	/**
-	 * Closes the intake
+	 * Closes the intake (kForward)
 	 */
 	public void closeIntake();
 
 	/**
-	 * Opens the intake
+	 * Opens the intake (kReverse)
 	 */
 	public void openIntake();
 }

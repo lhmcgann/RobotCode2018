@@ -43,8 +43,7 @@ public class RobotMap {
 
 	public static VictorSP leftIntakeMotor;
 	public static VictorSP rightIntakeMotor;
-	public static DoubleSolenoid leftIntakeSolenoid;
-	public static DoubleSolenoid rightIntakeSolenoid;
+	public static DoubleSolenoid intakeSolenoid;
 
 	public static DigitalSource leftEncPort1;
 	public static DigitalSource leftEncPort2;
@@ -127,10 +126,7 @@ public class RobotMap {
 
 		leftIntakeMotor = new VictorSP(getPort("IntakeLeftVictorSP", 8));
 		rightIntakeMotor = new VictorSP(getPort("IntakeRightVictorSP", 9));
-		leftIntakeSolenoid = new DoubleSolenoid(getPort("IntakeLeftSolenoidForward", 4),
-				getPort("IntakeLeftSolenoidReverse", 5));
-		rightIntakeSolenoid = new DoubleSolenoid(getPort("IntakeRightSolenoidForward", 2),
-				getPort("IntakeRightSolenoidReverse", 3));
+		intakeSolenoid = new DoubleSolenoid(getPort("IntakeSolenoidForward", 2), getPort("IntakeSolenoidReverse", 3));
 
 		leftEncPort1 = new DigitalInput(getPort("1LeftEnc", 2));
 		leftEncPort2 = new DigitalInput(getPort("2LeftEnc", 3));
