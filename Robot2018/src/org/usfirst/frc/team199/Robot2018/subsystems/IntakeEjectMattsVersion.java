@@ -4,6 +4,7 @@ import org.usfirst.frc.team199.Robot2018.Robot;
 import org.usfirst.frc.team199.Robot2018.RobotMap;
 import org.usfirst.frc.team199.Robot2018.commands.DefaultIntake;
 
+import edu.wpi.first.wpilibj.AnalogPotentiometer;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.PowerDistributionPanel;
 import edu.wpi.first.wpilibj.VictorSP;
@@ -17,6 +18,8 @@ public class IntakeEjectMattsVersion extends Subsystem implements IntakeEjectInt
 	private final PowerDistributionPanel pdp = RobotMap.pdp;
 	private final VictorSP leftIntakeMotor = RobotMap.leftIntakeMotor;
 	private final VictorSP rightIntakeMotor = RobotMap.rightIntakeMotor;
+	private final VictorSP intakeAngleMotor = RobotMap.intakeAngleMotor;
+	private final AnalogPotentiometer intakeAnglePot = RobotMap.intakeAnglePot;
 	private final DoubleSolenoid intakeClawSolenoid = RobotMap.intakeClawSolenoid;
 	private final DoubleSolenoid intakeEjectionSolenoid = RobotMap.intakeEjectionSolenoid;
 	private boolean open = isOpen(intakeClawSolenoid.get());

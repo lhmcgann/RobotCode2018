@@ -13,6 +13,7 @@ import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import com.kauailabs.navx.frc.AHRS;
 
+import edu.wpi.first.wpilibj.AnalogPotentiometer;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DigitalSource;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
@@ -43,6 +44,8 @@ public class RobotMap {
 
 	public static VictorSP leftIntakeMotor;
 	public static VictorSP rightIntakeMotor;
+	public static VictorSP intakeAngleMotor;
+	public static AnalogPotentiometer intakeAnglePot;
 	public static DoubleSolenoid intakeClawSolenoid;
 	public static DoubleSolenoid intakeEjectionSolenoid;
 
@@ -127,6 +130,9 @@ public class RobotMap {
 
 		leftIntakeMotor = new VictorSP(getPort("IntakeLeftVictorSP", 8));
 		rightIntakeMotor = new VictorSP(getPort("IntakeRightVictorSP", 9));
+		intakeAngleMotor = new VictorSP(getPort("IntakeAngleMotor", 10));
+		intakeAnglePot = new AnalogPotentiometer(getPort("IntakeAnglePot", 6),
+				Robot.getConst("IntakeAngleFullRange", 90), Robot.getConst("IntakeAngleOffset", 0));
 		intakeClawSolenoid = new DoubleSolenoid(getPort("IntakeSolenoidForward", 2),
 				getPort("IntakeSolenoidReverse", 3));
 		intakeEjectionSolenoid = new DoubleSolenoid(getPort("IntakeEjectionSolenoidOut", 4),
