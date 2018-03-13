@@ -39,7 +39,7 @@
 		3	X	
 		4	Y	
 		5	LB	take in [IntakeCube]
-		6	RB	take out [OuttakeCube]
+		6	RB	take out [EjectCubeWithPiston]
 		7	back
 		8	start
 		9	N/a
