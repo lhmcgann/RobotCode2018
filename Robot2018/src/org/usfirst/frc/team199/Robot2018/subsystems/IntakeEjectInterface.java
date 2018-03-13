@@ -3,6 +3,14 @@ package org.usfirst.frc.team199.Robot2018.subsystems;
 public interface IntakeEjectInterface {
 
 	/**
+	 * Shifts the eject piston in and out.
+	 * 
+	 * @param extend
+	 *            - whether to shift extend the piston (true) or retract it (false)
+	 */
+	public void shiftEjectPiston(boolean extend);
+
+	/**
 	 * Set the default command for a subsystem here.
 	 */
 	public void initDefaultCommand();

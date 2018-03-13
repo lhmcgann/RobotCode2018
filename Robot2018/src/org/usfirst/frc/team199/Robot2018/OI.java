@@ -8,7 +8,7 @@
 package org.usfirst.frc.team199.Robot2018;
 
 import org.usfirst.frc.team199.Robot2018.commands.CloseIntake;
-import org.usfirst.frc.team199.Robot2018.commands.EjectCube;
+import org.usfirst.frc.team199.Robot2018.commands.EjectCubeWithPiston;
 import org.usfirst.frc.team199.Robot2018.commands.FindTurnTimeConstant;
 import org.usfirst.frc.team199.Robot2018.commands.IntakeCube;
 import org.usfirst.frc.team199.Robot2018.commands.OpenIntake;
@@ -116,7 +116,7 @@ public class OI {
 			intakeCubeButton = new JoystickButton(manipulator, getButton("Intake Button", 5));
 			intakeCubeButton.whenPressed(new IntakeCube(Robot.intakeEject));
 			outakeCubeButton = new JoystickButton(manipulator, getButton("Outake Button", 6));
-			outakeCubeButton.whenPressed(new EjectCube(Robot.intakeEject));
+			outakeCubeButton.whenPressed(new EjectCubeWithPiston(Robot.intakeEject));
 		}
 
 	}

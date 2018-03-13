@@ -17,8 +17,24 @@ public class IntakeEjectMattsVersion extends Subsystem implements IntakeEjectInt
 	private final PowerDistributionPanel pdp = RobotMap.pdp;
 	private final VictorSP leftIntakeMotor = RobotMap.leftIntakeMotor;
 	private final VictorSP rightIntakeMotor = RobotMap.rightIntakeMotor;
-	private final DoubleSolenoid intakeSolenoid = RobotMap.intakeSolenoid;
-	private boolean open = isOpen(intakeSolenoid.get());
+	private final DoubleSolenoid intakeClawSolenoid = RobotMap.intakeClawSolenoid;
+	private final DoubleSolenoid intakeEjectionSolenoid = RobotMap.intakeEjectionSolenoid;
+	private boolean open = isOpen(intakeClawSolenoid.get());
+
+	/**
+	 * Shifts the eject piston in and out.
+	 * 
+	 * @param extend
+	 *            - whether to shift extend the piston (true) or retract it (false)
+	 */
+	@Override
+	public void shiftEjectPiston(boolean extend) {
+		if (extend) {
+			intakeEjectionSolenoid.set(DoubleSolenoid.Value.kForward);
+		} else {
+			intakeEjectionSolenoid.set(DoubleSolenoid.Value.kReverse);
+		}
+	}
 
 	/**
 	 * Return whether or not a side of the intake (L/R) is open
@@ -131,7 +147,7 @@ public class IntakeEjectMattsVersion extends Subsystem implements IntakeEjectInt
 	@Override
 	public void closeIntake() {
 		if (open) {
-			intakeSolenoid.set(DoubleSolenoid.Value.kForward);
+			intakeClawSolenoid.set(DoubleSolenoid.Value.kForward);
 		}
 		open = !open;
 		SmartDashboard.putBoolean("Intake Open", false);
@@ -143,7 +159,7 @@ public class IntakeEjectMattsVersion extends Subsystem implements IntakeEjectInt
 	@Override
 	public void openIntake() {
 		if (!open) {
-			intakeSolenoid.set(DoubleSolenoid.Value.kReverse);
+			intakeClawSolenoid.set(DoubleSolenoid.Value.kReverse);
 		}
 		open = !open;
 		SmartDashboard.putBoolean("Intake Open", true);
